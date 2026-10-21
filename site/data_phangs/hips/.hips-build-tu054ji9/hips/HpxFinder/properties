@@ -1,0 +1,9 @@
+creator_did          = ivo://local/P/PHANGS/NGC0628/F770W/meta
+obs_title            = display.fits-meta
+dataproduct_type     = meta
+hips_frame           = equatorial
+hips_order           = 9
+hips_release_date    = 2026-10-21T09:05Z
+progen_max_cell      = 1890x2600x1:1
+hips_version         = 1.4
+hips_builder         = Aladin/HipsGen v12.900

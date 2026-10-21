@@ -10,3 +10,4 @@ import('./phangs-info.test.mjs');
 import('./imagery.test.mjs');
 import('./phangs-chips.test.mjs');
 import('./presets.test.mjs');
+import('./hips.test.mjs');

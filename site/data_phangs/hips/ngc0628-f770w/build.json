@@ -1,0 +1,53 @@
+{
+  "source": "ngc0628_miri_lv3_f770w_i2d_anchor.fits",
+  "source_sha256": "58b65108441f943ed2d3b78e7611b72f571fe9680a2fb3b90f403310a6bf1ed8",
+  "hdu": {
+    "index": 1,
+    "name": "SCI",
+    "shape": [
+      2600,
+      1890
+    ]
+  },
+  "stretch": "asinh",
+  "asinh_softening": 0.1,
+  "limits": [
+    0.0630357638001442,
+    14.934459171295199
+  ],
+  "percentiles": [
+    0.5,
+    99.5
+  ],
+  "order": 12,
+  "tile_width": 512,
+  "jpeg_quality": 80,
+  "pixel_arcsec": 0.10064901597121306,
+  "center": [
+    24.171580892470722,
+    15.78811545364902
+  ],
+  "fov_deg": 0.10399635728690718,
+  "footprint": [
+    [
+      24.201834828661358,
+      15.748056427159678
+    ],
+    [
+      24.141326995181736,
+      15.748056400053617
+    ],
+    [
+      24.141314992984643,
+      15.828170295939938
+    ],
+    [
+      24.201846753149482,
+      15.828170323191129
+    ]
+  ],
+  "jpeg_files": 47,
+  "display_only": true,
+  "preview_tile": "Norder12/Dir75360000/Npix75360883.jpg",
+  "hipsgen_sha256": "6a4c68b0288c9f8683365087bc76b4c8cdca00a6f7c0d04619f4eadf6f81fcef"
+}

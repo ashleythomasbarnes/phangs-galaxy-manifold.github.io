@@ -1,0 +1,44 @@
+creator_did          = ivo://local/P/PHANGS/NGC0628/F770W
+#hips_creator        = HiPS creator (institute or person)
+#hips_copyright      = Copyright mention of the HiPS
+obs_title            = display.fits
+#obs_collection      = Dataset collection name
+#obs_description     = Dataset text description
+#obs_ack             = Acknowledgement mention
+#prov_progenitor     = Provenance of the original data (free text)
+#bib_reference       = Bibcode for bibliographic reference
+#bib_reference_url   = URL to bibliographic reference
+#obs_copyright       = Copyright mention of the original data
+#obs_copyright_url   = URL to copyright page of the original data
+#em_min              = Start in spectral coordinates in meters ( =2.998E8/freq in Hz, or =1.2398841929E-12*energy in MeV )
+#em_max              = Stop in spectral coordinates in meters
+#t_min               = Start time in MJD ( =(Unixtime/86400)+40587  or https://heasarc.gsfc.nasa.gov/cgi-bin/Tools/xTime/xTime.pl)
+#t_max               = Stop time in MJD
+#obs_regime          = Waveband keyword (Radio Millimeter Infrared Optical UV EUV X-ray Gamma-ray)
+hips_builder         = Aladin/HipsGen v12.900
+hips_version         = 1.4
+hips_frame           = equatorial
+hips_order           = 9
+hips_order_min       = 0
+hips_tile_width      = 512
+#hips_service_url    = ex: http://yourHipsServer/PHANGS NGC0628 F770W
+hips_status          = public master clonableOnce
+hips_initial_ra      = 24.1716
+hips_initial_dec     = 15.7881
+hips_initial_fov     = 0.08011
+hips_pixel_scale     = 2.236E-4
+s_pixel_scale        = 3.081E-5
+dataproduct_type     = image
+hipsgen_date         = 2026-10-21T09:07Z
+hipsgen_params       = in=/Users/abarnes/Library/CloudStorage/Dropbox/GitHub/phangs-galaxy-manifold.github.io/site/data_phangs/hips/.hips-build-gkg8863z/display.fits out=/Users/abarnes/Library/CloudStorage/Dropbox/GitHub/phangs-galaxy-manifold.github.io/site/data_phangs/hips/.hips-build-gkg8863z/hips order=9 tileWidth=512 frame=equatorial "pixelCut=0 255 linear" maxThread=2 id=local/P/PHANGS/NGC0628/F770W INDEX TILES PNG
+hipsgen_processtime  = 125ms
+hips_pixel_bitpix    = -32
+data_pixel_bitpix    = -32
+hips_sampling        = bilinear
+hips_overlay         = overlayMean mergeOverwriteTile treeMean
+moc_sky_fraction     = 1.271E-6
+hips_release_date    = 2026-10-21T09:07Z
+hips_tile_format     = fits
+hips_pixel_cut       = 0 255
+hips_data_range      = -127.5 382.5
+hips_data_minmax     = 0 255

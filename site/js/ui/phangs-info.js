@@ -49,14 +49,15 @@ export function initPhangsInfo(app, ui) {
         link('data_phangs/phangs_sample_table_v1p6.fits', 'FITS source')),
       h('li', {}, link('data_phangs/Nebulae_Readme.txt', 'Internal MUSE nebular catalogue v3 guide'), ' · ',
         link('data_phangs/Nebulae_Catalog_columns_list.xlsx', 'Column definitions')),
-      h('li', {}, link('data_phangs/phangs.json', 'Galaxy measurements and source records'), ' · ',
+      h('li', {}, link('data_phangs/Galaxy Morph Overview - morphclass.csv', 'Galaxy morphology and additional ALMA surveys'), ' · ',
+        link('data_phangs/phangs.json', 'Galaxy measurements and source records'), ' · ',
         link('data_phangs/nebulae_summary.json', 'MUSE summary measurements and provenance')));
     content.replaceChildren(
       section('The comparison sample',
         h('p', { text: n ? `${fmtInt(n)} entries from the supplied PHANGS sample table v1p6, including current and possible survey targets. This is a table inventory, not a count of galaxies observed by every survey.` :
           failed ? 'The PHANGS sample table could not be loaded. Reload the page to retry.' : 'Loading the PHANGS sample table…' }),
         h('p', { text: 'PHANGS explores the connections between gas, stars and star formation in nearby galaxies. Observation chips select this comparison sample; the SDSS background and its selections remain independent.' }),
-        h('p', { text: 'Survey statuses describe the supplied v1p6 table, not present observing status. Released and observed-but-unreleased entries both count as observed. JWST and Chandra coverage is not recorded in this table; unrecorded coverage does not imply no observations.' })),
+        h('p', { text: 'Available datasets use recorded observations in PHANGS v1p6 and survey membership in the supplied morphology overview. Release stages are not shown. JWST and Chandra coverage is not recorded in v1p6; unrecorded coverage does not imply no observations.' })),
       section('Measurements and comparison limits',
         h('ul', { class: 'ab-list pgi-caveats' },
           h('li', { text: 'PHANGS global stellar masses and SFRs use the table’s WISE/GALEX estimates. SDSS uses MPA-JHU estimates. Their methods differ, and no calibration offsets have been applied.' }),

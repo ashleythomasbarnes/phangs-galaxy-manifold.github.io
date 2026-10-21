@@ -2,8 +2,9 @@
 import { fadeFactors } from '../../math/frame.js';
 import { h } from '../../ui/dom.js';
 import { phangsValues, phangsImageUrl } from '../../data/phangs.js?v=3';
-import { PHANGS_SURVEYS, ALMA_ARRAYS, matchesPhangsSurveys } from '../../data/surveys.js';
+import { PHANGS_SURVEYS, ALMA_ARRAYS, ALMA_PROGRAMS, matchesPhangsSurveys } from '../../data/surveys.js?v=2';
 import { createNebulae } from './nebulae.js';
+import { phangsDataChips } from '../../ui/phangs-chips.js?v=2';
 
 export const PHANGS_COLOR = '#7de2d1';
 
@@ -188,9 +189,8 @@ export function createPhangs(app, ov) {
     } else nedList.append(h('p', { text: ned ? 'NED size query unavailable; no values substituted.' : 'NED sizes have not been fetched.' }));
     if (ned?.query_url) nedList.append(h('a', { href: ned.query_url, target: '_blank', rel: 'noopener noreferrer', text: 'NED source records (VOTable)' }));
     const aliases = h('details', {}, h('summary', { text: 'Other names' }), h('p', { text: src.alias || 'Unavailable' }));
-    const surveys = h('details', {}, h('summary', { text: 'Survey statuses recorded in v1p6' }));
-    for (const [key, value] of Object.entries(src)) if (key.startsWith('survey_') && key.endsWith('_status'))
-      surveys.append(h('p', { text: `${key.slice(7, -7).toUpperCase()}: ${value || 'Unavailable'}` }));
+    const surveys = h('details', {}, h('summary', { text: 'Available datasets' }));
+    for (const entry of phangsDataChips(row)) surveys.append(h('p', { text: entry.label }));
     const sdss = h('details', { class: 'phangs-sdss' }, h('summary', { text: row.nebula ? 'Host SDSS counterpart' : 'SDSS counterpart' }), h('p', { class: 'phangs-match-state', text: cp.message }));
     if (cp.candidate) {
       sdss.append(h('p', { text: `Row ${cp.candidate.index}; separation ${cp.candidate.separation_arcsec.toFixed(2)} arcsec` }));
@@ -264,7 +264,8 @@ export function createPhangs(app, ov) {
     filterSummary.textContent = activeSurveys.map(s => {
       const f = surveyFilters()[s.id];
       const array = s.id === 'alma' && f.array !== 'any' ? ALMA_ARRAYS.find(a => a.id === f.array)?.label : null;
-      return array ? `${s.label} (${array})` : s.label;
+      const program = s.id === 'alma' ? ALMA_PROGRAMS.find(p => p.id === f.program)?.label : null;
+      return `${s.label}${program ? ` · ${program}` : ''}${array ? ` (${array})` : ''}`;
     }).join(' + ');
     const markerColor = activeSurveys.length === 1 ? activeSurveys[0].color : activeSurveys.length > 1 ? '#efe6d2' : PHANGS_COLOR;
     const images = imagesEnabled();

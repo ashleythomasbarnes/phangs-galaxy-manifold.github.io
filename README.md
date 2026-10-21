@@ -222,3 +222,25 @@ site/            the website (plain JavaScript modules and WebGL2, no build step
 site/data/       the generated data
 tools/           the synthetic test data generator
 ```
+
+## NGC 628 interactive HiPS test
+
+Select NGC628 to automatically show the static survey and an interactive
+JWST F770W map side by side in a wider inspector. See [the generation instructions](tools/phangs_hips/README.md)
+for rebuilding the JPEG tiles from the local science FITS file.
+
+## Additional ALMA surveys and property tags
+
+The supplied `site/data_phangs/Galaxy Morph Overview - morphclass.csv` augments
+79 catalogue galaxies, matched by name or recorded alias. Rebuild with
+`uv run pipeline/export_phangs.py`. The export retains the CSV filename, hash,
+and original membership/classification values; blank cells remain unrecorded.
+
+ALMA offers Data available, Nominal PHANGS (with array configurations), eCMZ
+(18 galaxies), and ALMOND (25 galaxies). Telescope selections intersect. Release
+stages are not selectable. Availability uses recorded completed observations or
+membership in the supplied survey list; no new release state is inferred.
+
+Galaxy tags include Gleis+26 rings, Evans+26 MW-like galaxies (parenthesised
+entries are tentative), AGN flags from the Véron/Asmus columns, and original
+Véron nuclear-class codes where recorded in PHANGS v1p6.

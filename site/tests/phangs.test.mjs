@@ -377,3 +377,22 @@ test('observation rail owns the overlay toggle and keeps observation selections'
   events.emit('phangs:ready', null);
   assert.equal(toggle.disabled, true);
 });
+
+test('ALMA program subsets use explicit CSV membership and keep arrays within nominal PHANGS', () => {
+  const alma = PHANGS_SURVEYS.find(s => s.id === 'alma');
+  const select = (program, array = 'any') => phangs.galaxies.filter(r => matchesSurvey(r, alma, { program, array }));
+  assert.equal(select('nominal').length, 90);
+  assert.equal(select('nominal', 'full').length, 80);
+  assert.equal(select('nominal', 'compact').length, 10);
+  assert.equal(select('ecmz').length, 18);
+  assert.equal(select('almond').length, 25);
+  assert.equal(select('any').length, 90);
+  const empireOnly = phangs.galaxies.find(r => r.name === 'ngc3627');
+  assert.equal(matchesSurvey(empireOnly, alma, { program: 'almond' }), false);
+  assert.equal(matchesSurvey({ source: {} }, alma, { program: 'ecmz' }), false);
+  const filters = normalizeSurveyFilters({ alma: { status: 'released', program: 'ecmz' } });
+  assert.equal(filters.alma.status, 'observed'); // Old shared links no longer hide a release-stage constraint.
+  assert.equal(filters.alma.program, 'ecmz');
+  assert.equal(phangs.morphology_overview_source.matched_rows, 79);
+  assert.equal(phangs.galaxies.find(r => r.name === 'eso097-013').morphology_overview.source_name, 'Circinus');
+});

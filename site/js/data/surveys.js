@@ -9,16 +9,17 @@ export const PHANGS_SURVEYS = [
   { id: 'meerkat', label: 'MeerKAT', field: 'hi', instrument: 'MeerKAT', color: '#c7c284', desc: 'Atomic gas · H I observations' },
 ];
 
-export const SURVEY_STATUSES = [
-  { id: 'observed', label: 'Observed', sub: 'Released or awaiting release' },
-  { id: 'released', label: 'Released', sub: 'Data released in v1p6' },
-  { id: 'observed_not_released', label: 'Awaiting release', sub: 'Observed, not yet released in v1p6' },
-  { id: 'awarded_not_observed', label: 'Scheduled', sub: 'Awarded, not observed in v1p6' },
-];
 export const ALMA_ARRAYS = [
   { id: 'any', label: 'Any array' },
   { id: 'full', label: '12m + 7m + TP' },
   { id: 'compact', label: '7m + TP' },
+];
+
+export const ALMA_PROGRAMS = [
+  { id: 'any', label: 'Data available' },
+  { id: 'nominal', label: 'Nominal PHANGS' },
+  { id: 'ecmz', label: 'eCMZ' },
+  { id: 'almond', label: 'ALMOND' },
 ];
 
 export function surveyStatus(row, survey) {
@@ -34,17 +35,26 @@ export function almaArray(row) {
 }
 
 export function matchesSurvey(row, survey, filter = { status: 'observed', array: 'any' }) {
+  if (survey.id === 'alma') {
+    const overview = row.morphology_overview;
+    const program = filter.program || 'nominal';
+    if (program === 'ecmz') return overview?.ecmz === 'CMZ';
+    if (program === 'almond') return overview?.dense_gas_surveys?.includes('A') || false;
+    if (program === 'any') return matchesSurvey(row, survey, { ...filter, program: 'nominal' }) ||
+      overview?.ecmz === 'CMZ' || (overview?.dense_gas_surveys?.includes('A') || false);
+  }
   const status = surveyStatus(row, survey);
   const observed = status === 'released' || status === 'observed_not_released';
-  if (filter.status === 'observed' ? !observed : status !== filter.status) return false;
+  if (filter.status === 'observed' || !filter.status ? !observed : status !== filter.status) return false;
   return survey.id !== 'alma' || !filter.array || filter.array === 'any' || almaArray(row) === filter.array;
 }
 
 export function normalizeSurveyFilters(filters = {}) {
   return Object.fromEntries(PHANGS_SURVEYS.map(s => {
     const f = filters?.[s.id];
-    const valid = s.field && f && SURVEY_STATUSES.some(t => t.id === f.status);
-    return [s.id, valid ? { status: f.status, array: s.id === 'alma' && ALMA_ARRAYS.some(a => a.id === f.array) ? f.array : 'any' } : null];
+    const valid = s.field && f && ['observed', 'released', 'observed_not_released', 'awarded_not_observed'].includes(f.status || 'observed');
+    return [s.id, valid ? { status: 'observed', array: s.id === 'alma' && ALMA_ARRAYS.some(a => a.id === f.array) ? f.array : 'any',
+      ...(s.id === 'alma' ? { program: ALMA_PROGRAMS.some(p => p.id === f.program) ? f.program : 'nominal' } : {}) } : null];
   }));
 }
 

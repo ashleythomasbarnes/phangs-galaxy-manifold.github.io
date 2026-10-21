@@ -15,7 +15,8 @@ import { kpcPerArcsec } from '../math/cosmo.js';
 import { CATEGORY_COLORS, NEUTRAL } from '../config/style.js';
 import { FADE_WIDTH } from '../math/frame.js';
 import { phangsImageField, phangsImageUrl, cutoutImageUrl, IMAGE_LAYERS } from '../data/phangs.js?v=3';
-import { buildPhangsChips } from './phangs-chips.js';
+import { buildPhangsChips } from './phangs-chips.js?v=2';
+import { hasHipsDemo } from '../config/hips.js';
 
 const IMG_PX = 256, PIXSCALE = 0.262;
 const LS = 'https://www.legacysurvey.org/viewer';
@@ -85,7 +86,9 @@ export function initInspector(app, mount, ui) {
 
   let view = 'none';        // 'galaxy' | 'selection' | 'none'
   let openState = false;
+  let closeHips = () => {};
   function setOpen(on) {
+    if (!on) closeHips();
     openState = !!on;
     mount.classList.toggle('open', openState);
     mount.setAttribute('aria-hidden', openState ? 'false' : 'true');
@@ -267,6 +270,7 @@ export function initInspector(app, mount, ui) {
   }
 
   function buildImage(i, phangs = null) {
+    closeHips();
     const frame = h('div', { class: 'gimg loading' });
     const z = phangs ? NaN : data.value(i, 'z');
     const disp = Math.min(300, (mount.clientWidth || 340) - 40);
@@ -295,6 +299,25 @@ export function initInspector(app, mount, ui) {
     frame.style.setProperty('--size', `${disp}px`);
 
     let layer = null, token = 0;
+    const maps = h('div', { class: 'galaxy-maps' }, frame);
+    let hipsPanel = null;
+    function restoreStatic() {
+      hipsPanel?.remove();
+      hipsPanel = null;
+      maps.classList.remove('with-hips');
+      mount.classList.remove('hips-expanded');
+      if (!isNarrow()) app.camera.setSafeArea({ right: openState ? mount.offsetWidth + 28 : 28 });
+    }
+    closeHips = restoreStatic;
+    if (!localOnly && hasHipsDemo(phangs)) {
+      const url = new URL('hips-viewer.html', document.baseURI);
+      url.search = new URLSearchParams({ ra: phangs.ra, dec: phangs.dec });
+      const iframe = h('iframe', { src: url.href, title: 'NGC 628 interactive JWST F770W HiPS', class: 'hips-iframe' });
+      hipsPanel = h('div', { class: 'gimg hips-panel' }, iframe);
+      maps.classList.add('with-hips');
+      mount.classList.add('hips-expanded');
+      maps.append(hipsPanel);
+    }
     function loadLocal() {
       frame.classList.remove('failed', 'ready');
       if (kThumb < 0) {
@@ -359,7 +382,7 @@ export function initInspector(app, mount, ui) {
       img.src = phangs ? phangsImageUrl(phangs, IMG_PX, which) : cutoutImageUrl(m.ra, m.dec, field, IMG_PX, which);
     }
     for (const [key, button] of layerButtons) button.addEventListener('click', () => layer !== key && load(key, false));
-    return { frame, load };
+    return { frame: maps, load };
   }
 
   /** Category readout: one engraved cell per category (token above, swatch + class below). */
@@ -566,6 +589,7 @@ export function initInspector(app, mount, ui) {
   }
 
   function showSelection() {
+    closeHips();
     const sel = store.get().selection;
     if (!sel) {
       view = 'none';

@@ -10,6 +10,7 @@ import gzip
 import hashlib
 import json
 import math
+import re
 
 import numpy as np
 from astropy.table import Table
@@ -124,6 +125,47 @@ def match_position(ra, dec, sdss_ra, sdss_dec):
     return {"status": status, "candidates": candidates}
 
 
+def add_morphology_overview(catalogue):
+    """Join the supplied three-header-row CSV by catalogue names and aliases."""
+    path = SOURCE.with_name("Galaxy Morph Overview - morphclass.csv")
+    with path.open(newline="", encoding="utf-8-sig") as stream:
+        sheet = list(csv.reader(stream))
+    if (len(sheet) < 3 or len(sheet[0]) < 22 or len(sheet[1]) < 22
+            or [sheet[0][i].strip() for i in (0, 18, 19, 20, 21)] != ["Galaxy", "A = ALMOND", "eCMZ", "Gleis+26", "MW-like gal"]
+            or [sheet[1][i].strip() for i in (15, 16, 17, 20, 21)] != ["VC cat", "Asmus", "Stuber+21", "Ring", "Evans+26"]):
+        raise ValueError("Unexpected morphology overview column layout")
+    def canonical(name):
+        return re.sub(r"^(ngc|ic)0+", r"\1", re.sub(r"[^a-z0-9]", "", name.lower()))
+    aliases = {}
+    for row in catalogue["galaxies"]:
+        row.pop("morphology_overview", None)
+        for name in [row["name"], *(row["source"].get("alias") or "").split(";")]:
+            if name:
+                key = canonical(name)
+                aliases[key] = row if key not in aliases or aliases[key] is row else None
+    matched = set()
+    for values in sheet[3:]:
+        if not values or not values[0].strip():
+            continue
+        if len(values) < 22:
+            raise ValueError(f"Incomplete CSV row: {values[0]}")
+        row = aliases.get(canonical(values[0]))
+        if row is None or row["name"] in matched:
+            raise ValueError(f"Unmatched or duplicate CSV galaxy: {values[0]}")
+        matched.add(row["name"])
+        cell = lambda i: values[i].strip()
+        row["morphology_overview"] = {
+            "source_name": cell(0), "agn_veron": cell(15), "agn_asmus": cell(16),
+            "outflow_stuber21": cell(17), "dense_gas_surveys": [v.strip() for v in cell(18).split(",") if v.strip()],
+            "ecmz": cell(19), "gleis26_ring": cell(20), "mw_like_evans26": cell(21),
+        }
+    catalogue["morphology_overview_source"] = {
+        "filename": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "matched_rows": len(matched), "note": "Blank cells are unrecorded, not negative classifications. Survey membership is recorded as supplied; no release status inferred.",
+    }
+    return catalogue
+
+
 def build_catalogue():
     table = Table.read(SOURCE)
     manifest_bytes = (SDSS / "manifest.json").read_bytes()
@@ -175,7 +217,7 @@ def build_catalogue():
                     "catalogue LSR velocity, not a heliocentric SDSS-equivalent redshift. "
                     "Orientation, morphology and AGN fields retain their source values and masks.",
            "galaxies": rows}
-    return out
+    return add_morphology_overview(out)
 
 
 def export():
