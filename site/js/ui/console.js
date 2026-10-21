@@ -25,6 +25,16 @@ export function initConsole(app, mount, ui) {
   setTip(bMosaic, { title: 'Mosaic', sub: 'Tile the plane with the most typical galaxy of each cell', key: 'M' }, 'top');
   const rocker = h('div', { class: 'rocker', role: 'group', 'aria-label': 'Display mode' }, h('i', { class: 'rk-paddle', 'aria-hidden': 'true' }), bGlow, bMosaic);
   for (const b of [bGlow, bMosaic]) b.addEventListener('click', () => actions.setMode(b.dataset.mode));
+  const bPhangsImages = h('button', { class: 'tog con-phangs-images', type: 'button',
+    'aria-label': 'PHANGS DSS images', 'aria-pressed': 'false' },
+    h('span', { html: icon('image') }), h('small', { text: 'PHANGS' }));
+  setTip(bPhangsImages, { title: 'PHANGS DSS images', sub: 'Replace PHANGS galaxy markers with DSS image tiles at their plot positions. Survey filters still apply; click a tile to inspect.' }, 'top');
+  bPhangsImages.disabled = data.manifest?.host?.externalImages === false;
+  bPhangsImages.addEventListener('click', () => {
+    const current = store.get();
+    const images = !(current.phangs?.images && current.overlays.phangs !== false);
+    store.set({ phangs: { images }, ...(images ? { overlays: { phangs: true } } : {}) });
+  });
 
   // ------------------------------------------------------------------ color dial + legend
   const dialSym = h('span', { class: 'cd-sym' });
@@ -270,6 +280,25 @@ export function initConsole(app, mount, ui) {
     () => actions.setOverlay('literature', !store.get().overlays.literature));
   const tLasso = tog('lasso', 'lasso', 'Lasso', 'Draw to select; shift adds, alt subtracts. The selection follows every rotation', 'L',
     () => actions.setTool(store.get().tool === 'lasso' ? 'pan' : 'lasso'));
+  const tighten = h('button', { class: 'tog ibtn tog-tighten', type: 'button', 'aria-label': 'Tighten relation', html: icon('tighten') });
+  setTip(tighten, { title: 'Tighten', sub: 'Keep y; search x for the tightest relation (projection pursuit)' }, 'top');
+  tighten.addEventListener('click', async () => {
+    if (tighten.classList.contains('busy')) return;
+    tighten.classList.add('busy');
+    tighten.setAttribute('aria-busy', 'true');
+    try {
+      const result = await app.pursuit.tighten({});
+      if (result === false) {
+        tighten.classList.add('nope');
+        setTimeout(() => tighten.classList.remove('nope'), 700);
+      }
+    } catch (err) {
+      console.error('tighten failed', err);
+    } finally {
+      tighten.classList.remove('busy');
+      tighten.removeAttribute('aria-busy');
+    }
+  });
   const bReset = h('button', { class: 'tog ibtn', type: 'button', 'aria-label': 'Reset the view', html: icon('reset') });
   setTip(bReset, { title: 'Reset', sub: 'Clear the z and color-value filters and return to the current canonical view', key: 'R' }, 'top');
   bReset.addEventListener('click', () => actions.resetView());
@@ -291,7 +320,7 @@ export function initConsole(app, mount, ui) {
 
   const sep = () => h('i', { class: 'con-sep', 'aria-hidden': 'true' });
   const bar = h('div', { class: 'con' },
-    h('div', { class: 'con-group con-mode' }, rocker),
+    h('div', { class: 'con-group con-mode' }, rocker, bPhangsImages),
     sep(),
     colorGroup,
     h('div', { class: 'con-spacer' }),
@@ -300,7 +329,7 @@ export function initConsole(app, mount, ui) {
     sep(),
     h('div', { class: 'con-group con-knobs' }, gain.el, size.el),
     sep(),
-    h('div', { class: 'con-group con-toggles' }, tTrends, tLit, tLasso, h('i', { class: 'con-sep sm', 'aria-hidden': 'true' }), bReset, bShare));
+    h('div', { class: 'con-group con-toggles' }, tighten, tTrends, tLit, tLasso, h('i', { class: 'con-sep sm', 'aria-hidden': 'true' }), bReset, bShare));
   mount.append(bar);
 
   // ------------------------------------------------------------------ state sync
@@ -312,6 +341,9 @@ export function initConsole(app, mount, ui) {
       bGlow.setAttribute('aria-pressed', s.mode === 'glow' ? 'true' : 'false');
       bMosaic.setAttribute('aria-pressed', s.mode === 'mosaic' ? 'true' : 'false');
       bar.classList.toggle('mosaic', s.mode === 'mosaic');
+    }
+    if (all || changed.includes('phangs') || changed.includes('overlays')) {
+      bPhangsImages.setAttribute('aria-pressed', s.phangs?.images && s.overlays.phangs !== false ? 'true' : 'false');
     }
     if (all || changed.includes('color')) syncColor();
     if (all || changed.includes('filters')) {

@@ -220,18 +220,6 @@ sub { font-size: 0.72em; line-height: 0; vertical-align: -0.28em; letter-spacing
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.tb-by {
-  font: 400 11px/1 var(--font-ui);
-  letter-spacing: 0.02em;
-  color: var(--cream-3);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 160ms ease-out;
-}
-.tb-by b { font-weight: 500; color: var(--cream-2); transition: color 160ms ease-out; }
-.tb-by:hover b, .tb-by:focus-visible b { color: var(--orange); }
-.tb-by:focus-visible { outline: 1px dashed var(--orange); outline-offset: 3px; border-radius: 2px; }
-@media (max-width: 1239.98px) { .tb-by { display: none; } }
 .ab-foot a { color: var(--cream-2); text-decoration: none; border-bottom: 1px solid var(--line); }
 .ab-foot a:hover { color: var(--orange); border-bottom-color: var(--orange); }
 .tb-badge i { font-style: italic; color: var(--cream-3); }
@@ -1531,3 +1519,83 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
   .sel-thumb { animation: none; }
   .pk { transition: none; }
 }
+
+/* PHANGS observation browser, using the same recessed panels and instrument colors. */
+:root { --rail-w: 112px; }
+.survey-rail { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 18px 10px; }
+.survey-rail-head { display: grid; gap: 5px; margin: 0 2px 2px; }
+.survey-rail-head b { color: var(--cream); font: 400 9px/1.4 var(--font-display); letter-spacing: .12em; }
+.survey-rail-head > span { color: var(--cream-3); font: 400 10px/1.4 var(--font-ui); }
+.survey-total { color: var(--cream-3); font: 400 8px/1.5 var(--font-mono); white-space: nowrap; padding: 0 2px 6px; }
+.survey-rail.filtered .survey-total { color: var(--cream); }
+.survey-chip { position: relative; display: flex; align-items: center; gap: 5px; padding: 0 8px; min-height: 38px; border: 1px solid var(--hair-25); border-radius: var(--r-pill); background: linear-gradient(180deg, #151c25, #0c1016); box-shadow: inset 0 1px 0 #efe6d209, 0 2px 5px #0003; color: var(--cream-2); font: 400 11px/1.3 var(--font-ui); transition: border-color 150ms ease-out, background 150ms ease-out; white-space: nowrap; }
+.survey-dot { width: 4px; height: 4px; flex: none; border-radius: 50%; background: var(--survey-color); box-shadow: 0 0 7px color-mix(in srgb, var(--survey-color) 25%, transparent); }
+.survey-chip:hover, .survey-chip[aria-expanded="true"] { border-color: var(--survey-color); color: var(--cream); }
+.survey-chip.selected { border-color: var(--survey-color); background: color-mix(in srgb, var(--survey-color) 16%, var(--bg)); color: var(--survey-color); }
+.survey-chip.selected::after { content: ''; position: absolute; left: -7px; width: 2px; height: 18px; border-radius: 2px; background: var(--survey-color); }
+.survey-tally { margin-left: auto; font: 400 8px/1 var(--font-mono); opacity: .75; }
+.survey-chip.unrecorded { border-style: dashed; color: var(--cream-3); }
+.survey-chip.unrecorded .survey-dot { background: transparent; border: 1px solid var(--survey-color); width: 5px; height: 5px; }
+.survey-clear, .views-close { padding: 5px; border: 0; border-radius: 4px; background: transparent; color: var(--cream-3); font: 400 10px/1.4 var(--font-ui); }
+.survey-clear:hover, .views-close:hover { color: var(--cream); background: var(--bg-3); }
+.survey-rail-note { margin: 8px 4px; padding-top: 12px; border-top: 1px solid var(--hair-15); color: var(--cream-3); font: 400 9px/1.6 var(--font-ui); }
+.survey-clear[hidden] { display: none; }
+
+.control-popover { position: fixed; width: min(324px, calc(100vw - 20px)); overflow-y: auto; overscroll-behavior: contain; padding: 16px; border: 1px solid var(--hair-25); border-radius: 14px; background: linear-gradient(145deg, #1a212d, #10151e 70%); box-shadow: var(--panel-shadow), inset 0 1px 0 #efe6d20b; color: var(--cream); }
+.control-popover[hidden] { display: none; }
+.popover-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.popover-head h2 { margin: 5px 0 0; font: 400 18px/1.25 var(--font-ui); letter-spacing: .02em; }
+.popover-eyebrow { margin: 16px 4px 8px; color: var(--cream-3); font: 400 8px/1.4 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.popover-head .popover-eyebrow { margin: 0; }
+.popover-sub { margin: 10px 0 14px; color: var(--cream-3); font: 400 12px/1.5 var(--font-ui); }
+.survey-panel { border-top-color: var(--survey-color); }
+.survey-panel .popover-head h2 { color: var(--survey-color); }
+.survey-option { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 8px; margin: 3px 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--cream-2); text-align: left; }
+.survey-option:hover { background: #efe6d208; border-color: var(--hair-15); }
+.survey-option[aria-pressed="true"] { background: color-mix(in srgb, var(--survey-color) 9%, transparent); border-color: color-mix(in srgb, var(--survey-color) 40%, transparent); color: var(--cream); }
+.option-mark { width: 11px; height: 11px; flex: none; border-radius: 50%; border: 1px solid var(--hair-35); }
+.survey-option[aria-pressed="true"] .option-mark { border-color: var(--survey-color); box-shadow: inset 0 0 0 3px var(--bg-2); background: var(--survey-color); }
+.survey-option b { font: 400 12px/1.4 var(--font-ui); }
+.survey-option small { display: block; color: var(--cream-3); font: 400 10px/1.5 var(--font-ui); margin-top: 2px; }
+.option-count { margin-left: auto; color: var(--cream-3); font: 400 10px/1 var(--font-mono); }
+.popover-foot, .survey-array-note { margin: 14px 2px 0; color: var(--cream-3); font: 400 10px/1.6 var(--font-ui); }
+.popover-foot { border-top: 1px solid var(--hair-15); padding-top: 12px; }
+.survey-missing { margin: 18px 0; font: 400 13px/1.6 var(--font-ui); color: var(--cream-2); }
+
+.tb-carts { gap: 7px; align-items: center; }
+.views-more { flex: none; display: flex; align-items: center; gap: 18px; height: 46px; padding: 0 12px; border: 1px solid var(--hair-25); border-radius: 11px; background: linear-gradient(180deg, #1b2330, #111720); box-shadow: inset 0 1px 0 #efe6d20b, 0 2px 4px #0004; color: var(--cream-2); }
+.views-more-label { display: grid; gap: 4px; text-align: left; font: 400 11px/1 var(--font-ui); min-width: 59px; }
+.views-more-label small { color: var(--cream-3); font: 400 7px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.views-chevron { color: var(--cream-3); transition: transform 160ms ease-out; }
+.views-more:hover, .views-more[aria-expanded="true"] { border-color: var(--hair-35); color: var(--cream); }
+.views-more[aria-expanded="true"] .views-chevron { transform: rotate(180deg); }
+.views-more.active { border-color: var(--orange); color: var(--orange); }
+.views-panel { width: min(390px, calc(100vw - 20px)); }
+.views-list { display: grid; gap: 5px; }
+.views-list .cart-menu { width: 100%; height: auto; min-height: 46px; display: grid; grid-template-columns: 46px 44px 1fr 12px; gap: 10px; align-items: center; padding: 6px 8px; text-align: left; }
+.cart-menu .cart-screen { height: 28px; width: 46px; }
+.cart-menu .cart-code { padding: 0; font-size: 9px; }
+.cart-name { color: var(--cream-2); font: 400 12px/1.35 var(--font-ui); }
+.cart-selected { color: var(--orange); visibility: hidden; }
+.cart.active .cart-selected { visibility: visible; }
+.tog-tighten.busy { color: var(--orange); animation: gm-tick 700ms ease-in-out infinite; }
+.tog-tighten.nope { animation: gm-nope 380ms ease-in-out; }
+@media (min-width: 760px) and (max-width: 1150px) { .tb-word { display: inline; font-size: 9px; letter-spacing: .14em; } }
+@media (min-width: 760px) and (max-width: 900px) { .tb-left { gap: 8px; } .tb-word { display: none; } }
+@media (max-width: 759.98px) {
+  .survey-rail { flex-direction: row; align-items: center; width: max-content; height: 100%; gap: 8px; padding: 0 10px; }
+  .survey-rail-head { display: none; }
+  .survey-total { display: none; }
+  .survey-chip { min-height: 30px; gap: 6px; padding: 0 10px; }
+  .survey-chip.selected::after { left: 8px; right: 8px; bottom: -5px; height: 2px; width: auto; }
+  .survey-rail-note { display: none; }
+  .survey-clear { white-space: nowrap; }
+  .views-more { height: 40px; gap: 8px; padding: 0 8px; }
+  .views-more-label { min-width: 48px; font-size: 10px; }
+  .views-more-label small { font-size: 6px; }
+  .tb-carts { gap: 4px; }
+  .control-popover { padding: 12px; }
+}
+
+.phangs-controls .phangs-filter-summary { color: var(--cream-2); }
+.phangs-filter-summary[hidden] { display: none; }

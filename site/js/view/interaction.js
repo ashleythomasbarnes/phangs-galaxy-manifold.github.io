@@ -21,6 +21,7 @@ export class Interaction {
     this.el = element;
     this.tools = new Map();
     this.clickHandlers = [];
+    this.hoverHandlers = [];
     this.tool = 'pan';
     this.requested = 'pan';
     this._pointers = new Map();
@@ -62,6 +63,12 @@ export class Interaction {
       const i = this.clickHandlers.indexOf(h);
       if (i >= 0) this.clickHandlers.splice(i, 1);
     };
+  }
+
+  /** An overlay may consume a hover; null clears it during gestures or motion. */
+  addHoverHandler(fn) {
+    this.hoverHandlers.push(fn);
+    return () => { this.hoverHandlers = this.hoverHandlers.filter(h => h !== fn); };
   }
 
   setTool(name) {
@@ -263,6 +270,14 @@ export class Interaction {
       this.clearHover();
       return;
     }
+    for (const handler of this.hoverHandlers) {
+      if (!handler({ sx, sy })) continue;
+      if (this._hoverLast.index >= 0) {
+        this._hoverLast = { index: -1, sx: 0, sy: 0 };
+        this.app.events.emit('hover', this._hoverLast);
+      }
+      return;
+    }
     const index = this.app.proj.pick(sx, sy, this.hoverRadius);
     const last = this._hoverLast;
     if (index === last.index && (index < 0 || (last.sx === sx && last.sy === sy))) return;
@@ -274,6 +289,7 @@ export class Interaction {
   clearHover() {
     clearTimeout(this._hoverTimer);
     this._hoverTimer = 0;
+    for (const handler of this.hoverHandlers) handler(null);
     if (this._hoverLast.index >= 0) {
       this._hoverLast = { index: -1, sx: 0, sy: 0 };
       this.app.events.emit('hover', { index: -1, sx: 0, sy: 0 });

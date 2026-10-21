@@ -1,4 +1,51 @@
-# Galaxy Manifold — core API (as implemented)
+# PHANGS Galaxy Manifold — core API (as implemented)
+
+PHANGS is an independent comparison overlay (`app.overlays.phangs`). Its `ready`
+promise resolves to the exported catalogue or null; `selected` is a PHANGS name
+or null, and `close()` clears PHANGS inspection. `setOverlay('phangs', bool)`
+controls visibility (on by default). PHANGS rows never enter `app.data`, the SDSS
+selection mask, statistics or filters. The overlay emits `phangs:hover`
+`{row, sx, sy}` (or `{row:null}`), `phangs:inspect` `{row, details}` and
+`phangs:closed` to use the existing hover card and inspector drawer. PHANGS bars
+are percentiles against the SDSS distributions, using only measured PHANGS values.
+`row.values.logSigma` uses total `props_mstar / (π R90_kpc²)` in M☉ kpc⁻²,
+logged to base 10. The radius comes from `size_r90` and the PHANGS distance;
+the circular-area estimate differs from the SDSS `Mstar/(2π R50²)` definition.
+`phangs.values(row)` and `phangs.project(row)` respect the optional
+`store.phangs.sizeMode` (`none` by default, or `ned-exponential`). The latter maps
+a referenced NED r-band exponential half-light radius onto `logR50` for comparison;
+it does not modify `row.values` or any SDSS data. `phangs:size` announces size changes;
+`phangs:measurements` refreshes inspector bars after size, summary or catalogue changes.
+`phangs:count` reports `{visible,total,matching,supported,enabled,regionsVisible}`
+for overlay consumers. Shared view links store the mode as `phs=ned-exponential`.
+`store.phangs.images` (default false) replaces visible summary markers with 48px
+DSS tiles, requested lazily after camera motion settles. Links encode this as
+`phi=1`. Failed requests retain the marker, and hosts that disable external images
+also disable this toggle. Image picking passes through the stage interaction so
+pan, zoom and lasso still work across tiles; SDSS Glow/Mosaic stays independent.
+
+The observations rail owns the PHANGS visibility toggle. Plot controls are
+contextual: size controls require `logR50` or `logSigma`, MUSE controls require
+one of its four shared nebular dimensions. Neither panel appears on global-only
+views or while PHANGS is off. `phangs.inspect(row)` opens a PHANGS galaxy from
+the header search; it preserves SDSS selections.
+`ui.header.search.close()` participates in `ui.closeMenus()`. The PHANGS
+information dialog and the SDSS reference-data dialog are mutually exclusive.
+All presets share the header Views menu. PHANGS inspectors display source morphology
+and observed survey chips, with lower measurement/provenance sections initially collapsed.
+The export includes signed `values.z = orient_vlsr / 299792.458` and LSR-frame
+provenance; this low-velocity approximation is labelled `z†` in the inspector.
+
+MUSE uses `store.phangs.nebulaDisplay` (`summary`, `regions`, `both`; default
+`summary`) and `nebulaSummary` (`mean`, `median`, `summed`; default `mean`). Links
+encode nondefault choices as `phnd` and `phnm`. Only `N2Ha`, `O3Hb`, `HaHb` and
+`OH_PP04` are added to the PHANGS values; `OH` (T04) and stellar `AV` stay missing.
+`phangs.nebulae.ready` resolves to the summary catalogue or null. `loadRegions()`
+loads the separate full catalogue on demand, resolving to the export or null.
+`nebulae.stats` reports `{visible,matching,total,drawMs}` for region rendering.
+Region inspection/hover uses a host row with a `nebula` member containing region
+ID, coordinates, measured values, native properties and flags. Images and global
+properties remain those of the host. No region enters the SDSS data or statistics.
 
 For the UI agent (`js/ui/*`, `css/ui.css`) and the overlays agent (`js/view/overlays/*`,
 `css/overlays.css`). The contract is DESIGN.md §10–§12; this file records what the code does,
@@ -196,6 +243,8 @@ children get `auto`, so UI mounted there keeps its events.
   Handlers get `{sx, sy, X, Y, dx, dy, startX, startY, event, app}`; `onDown` may return
   `false` to decline; `onUp` returning `true` suppresses the click.
 - `addClickHandler(fn(ctx) → true to consume, priority=0) → off`; `ctx.pick(r)` picks.
+- `addHoverHandler(fn({sx,sy} | null) → true to consume) → off` lets canvas overlays
+  handle hover before the SDSS picker; `null` clears hover during gestures/motion.
 - `hoverRadius` (10 px), `clearHover()`, `refreshHover()`.
 
 ## ThumbCache (`app.thumbs`)

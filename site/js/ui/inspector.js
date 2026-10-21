@@ -14,6 +14,8 @@ import { groupedDims, dimTitle, chipFor, catToken, GROUP_NAMES, shortKids } from
 import { kpcPerArcsec } from '../math/cosmo.js';
 import { CATEGORY_COLORS, NEUTRAL } from '../config/style.js';
 import { FADE_WIDTH } from '../math/frame.js';
+import { phangsImageField, phangsImageUrl, cutoutImageUrl, IMAGE_LAYERS } from '../data/phangs.js?v=3';
+import { buildPhangsChips } from './phangs-chips.js';
 
 const IMG_PX = 256, PIXSCALE = 0.262;
 const LS = 'https://www.legacysurvey.org/viewer';
@@ -74,6 +76,7 @@ export function initInspector(app, mount, ui) {
 
   bBack.addEventListener('click', () => actions.inspect(null));
   bClose.addEventListener('click', () => {
+    if (view === 'phangs') { app.overlays.phangs.close(); return; }
     if (view === 'galaxy') {
       actions.inspect(null);
       if (store.get().selection) setOpen(false);
@@ -93,6 +96,7 @@ export function initInspector(app, mount, ui) {
 
   /** Close the drawer entirely (a galaxy view is dropped; a selection stays, behind its tab). */
   function dismiss() {
+    if (view === 'phangs') { app.overlays.phangs.close(); return; }
     const wasGalaxy = view === 'galaxy';
     setOpen(false);
     if (wasGalaxy) actions.inspect(null);
@@ -139,7 +143,8 @@ export function initInspector(app, mount, ui) {
   function reveal(i) {
     if (!app.data.loaded || i == null || store.get().tour.playing || app.camera.animating) return;
     const cam = app.camera;
-    const [X, Y] = app.proj.projectRow(i, app.frame);
+    const projected = typeof i === 'object' ? app.overlays.phangs.project(i) : null;
+    const [X, Y] = projected ? [projected.X, projected.Y] : app.proj.projectRow(i, app.frame);
     const [sx, sy] = cam.toScreen(X, Y);
     if (!Number.isFinite(sx) || !Number.isFinite(sy)) return;
     let dx = 0, dy = 0;
@@ -204,6 +209,7 @@ export function initInspector(app, mount, ui) {
 
   // ------------------------------------------------------------------ single galaxy
   let gal = null;   // {i, img, ...}
+  let inspectedPhangs = null;
   function linkBtn(ic, label, href) {
     const a = h('a', { class: 'ibtn insp-link', href: href || '#', target: '_blank', rel: 'noopener noreferrer', 'aria-label': label, html: icon(ic) });
     if (!href) a.classList.add('off');
@@ -230,8 +236,8 @@ export function initInspector(app, mount, ui) {
   }
 
   /** Scale bar for an image of `fieldArcsec` shown `dispPx` wide (default: the hot-linked cutout). */
-  function scaleBar(z, dispPx, fieldArcsec = IMG_PX * PIXSCALE) {
-    const kpa = kpcPerArcsec(z);
+  function scaleBar(z, dispPx, fieldArcsec = IMG_PX * PIXSCALE, distance = null) {
+    const kpa = distance > 0 ? distance * 1000 * Math.PI / (180 * 3600) : kpcPerArcsec(z);
     if (!(kpa > 0 && fieldArcsec > 0)) return null;
     const pxPerKpc = dispPx / (fieldArcsec * kpa);
     const choices = [1, 2, 5, 10, 20, 50, 100, 200];
@@ -260,24 +266,26 @@ export function initInspector(app, mount, ui) {
     }
   }
 
-  function buildImage(i) {
+  function buildImage(i, phangs = null) {
     const frame = h('div', { class: 'gimg loading' });
-    const z = data.value(i, 'z');
+    const z = phangs ? NaN : data.value(i, 'z');
     const disp = Math.min(300, (mount.clientWidth || 340) - 40);
     // Artifact hosting blocks hot-linked images: show the galaxy's own thumbnail instead
     const localOnly = data.manifest?.host?.externalImages === false;
-    const kThumb = localOnly && app.thumbs?.available ? app.thumbs.forRow(i) : -1;
-    const field = kThumb >= 0 ? app.thumbs.crop(kThumb) : IMG_PX * PIXSCALE;
-    const sb = Number.isFinite(z) && (!localOnly || kThumb >= 0) ? scaleBar(z, disp, field) : null;
+    const kThumb = !phangs && localOnly && app.thumbs?.available ? app.thumbs.forRow(i) : -1;
+    const field = phangs ? phangsImageField(phangs) : kThumb >= 0 ? app.thumbs.crop(kThumb) : IMG_PX * PIXSCALE;
+    const sb = (Number.isFinite(z) || phangs?.source.dist > 0) && (!localOnly || kThumb >= 0) ? scaleBar(z, disp, field, phangs?.source.dist) : null;
     const bar = sb ? h('div', { class: 'gimg-bar', style: { '--w': `${sb.px.toFixed(1)}px` } }, h('i'), h('span', { text: `${sb.L} kpc` })) : null;
-    if (bar) setTip(bar, { title: `${sb.L} kpc at z = ${z.toFixed(4)}`, meta: `${kpcPerArcsec(z).toFixed(3)} kpc/″ · ${field.toFixed(0)}″ field` }, 'top');
+    if (bar) setTip(bar, phangs ? { title: `${sb.L} kpc at ${phangs.source.dist.toFixed(2)} Mpc`, meta: `PHANGS distance · ${field.toFixed(0)}″ field` } :
+      { title: `${sb.L} kpc at z = ${z.toFixed(4)}`, meta: `${kpcPerArcsec(z).toFixed(3)} kpc/″ · ${field.toFixed(0)}″ field` }, 'top');
     const reticle = h('div', { class: 'gimg-ret', 'aria-hidden': 'true' });
     const layers = h('div', { class: 'gimg-layers', role: 'group', 'aria-label': 'Image layer' });
-    const bDR9 = h('button', { type: 'button', class: 'on', text: 'DR9' });
-    const bSDSS = h('button', { type: 'button', text: 'SDSS' });
-    setTip(bDR9, { title: 'Legacy Surveys DR9', sub: 'g r z, deeper' }, 'bottom');
-    setTip(bSDSS, { title: 'SDSS', sub: 'g r i' }, 'bottom');
-    layers.append(bDR9, bSDSS);
+    const layerButtons = new Map(IMAGE_LAYERS.map(spec => {
+      const button = h('button', { type: 'button', text: spec.label, 'aria-pressed': 'false' });
+      setTip(button, { title: spec.title, sub: spec.sub }, 'bottom');
+      layers.append(button);
+      return [spec.key, button];
+    }));
     const img = h('img', { alt: 'Image cutout of the galaxy', width: String(disp), height: String(disp), decoding: 'async', draggable: 'false' });
     img.crossOrigin = 'anonymous';
     const status = h('span', { class: 'gimg-status', html: icon('image') });
@@ -307,21 +315,32 @@ export function initInspector(app, mount, ui) {
     }
     function load(which, auto) {
       if (localOnly) return loadLocal();
-      const m = data.metaRow(i);
+      const m = phangs || data.metaRow(i);
       if (!m || !Number.isFinite(m.ra)) {
         frame.classList.add('loading');
         return;
       }
       layer = which;
-      bDR9.classList.toggle('on', which === 'ls-dr9');
-      bSDSS.classList.toggle('on', which === 'sdss');
+      for (const [key, button] of layerButtons) {
+        button.classList.toggle('on', which === key);
+        button.setAttribute('aria-pressed', String(which === key));
+      }
+      const label = IMAGE_LAYERS.find(spec => spec.key === which)?.title || which;
+      img.alt = `${label} image cutout of ${phangs ? phangs.name.toUpperCase() : 'the galaxy'}`;
       const my = ++token;
       frame.classList.add('loading');
       frame.classList.remove('failed', 'ready');
+      status.innerHTML = icon('image');
       img.onload = () => {
         if (my !== token) return;
         if (which === 'ls-dr9' && auto && imageBlank(img)) {
           load('sdss', false);
+          return;
+        }
+        if (imageBlank(img)) {
+          frame.classList.remove('loading', 'ready');
+          frame.classList.add('failed');
+          status.textContent = `No ${label} image available`;
           return;
         }
         frame.classList.remove('loading');
@@ -335,12 +354,11 @@ export function initInspector(app, mount, ui) {
         }
         frame.classList.remove('loading');
         frame.classList.add('failed');
-        status.innerHTML = icon('broken');
+        status.textContent = `No ${label} image available`;
       };
-      img.src = `${LS}/cutout.jpg?ra=${m.ra.toFixed(6)}&dec=${m.dec.toFixed(6)}&layer=${which}&pixscale=${PIXSCALE}&size=${IMG_PX}`;
+      img.src = phangs ? phangsImageUrl(phangs, IMG_PX, which) : cutoutImageUrl(m.ra, m.dec, field, IMG_PX, which);
     }
-    bDR9.addEventListener('click', () => layer !== 'ls-dr9' && load('ls-dr9', false));
-    bSDSS.addEventListener('click', () => layer !== 'sdss' && load('sdss', false));
+    for (const [key, button] of layerButtons) button.addEventListener('click', () => layer !== key && load(key, false));
     return { frame, load };
   }
 
@@ -360,23 +378,26 @@ export function initInspector(app, mount, ui) {
     return row;
   }
 
-  function galaxyStrips(i) {
+  function galaxyStrips(i, values = null, sizeProxy = false) {
     const wrap = h('div', { class: 'strips' });
     for (const g of groups) {
       const blk = h('div', { class: 'strip-group', style: { '--gc': g.color } });
       for (const d of g.dims) {
-        const x = data.value(i, d.key);
-        const raw = data.raw[d.index] ? data.raw[d.index][i] : 0;
+        const x = values ? values[d.key] : data.value(i, d.key);
+        const raw = !values && data.raw[d.index] ? data.raw[d.index][i] : 0;
         const pr = raw ? pctRange(d, raw) : [NaN, NaN];
-        const p = (pr[0] + pr[1]) / 2;
+        const p = values && Number.isFinite(x) ? cdfPct(d.quantiles, x) : (pr[0] + pr[1]) / 2;
         const ok = Number.isFinite(x) && Number.isFinite(p);
+        const proxy = sizeProxy && d.key === 'logR50';
+        const r90Density = values && d.key === 'logSigma';
+        const lsrRedshift = values && d.key === 'z';
         const row = h('div', { class: `strip${ok ? '' : ' nil'}` },
-          h('span', { class: 'strip-k' }, shortKids(d.short)),
+          h('span', { class: 'strip-k' }, shortKids(proxy ? 'Rₑ†' : r90Density ? 'Σ★₉₀' : lsrRedshift ? 'z†' : d.short)),
           h('span', { class: 'strip-track' }, h('i', { class: 'strip-mid' }), ok ? h('i', { class: 'strip-dot', style: { left: `${clamp(p, 0, 100)}%` } }) : null),
           h('span', { class: 'strip-v', text: ok ? config.dims.format(d.key, x) : '–' }));
         setTip(row, {
-          title: dimTitle(d),
-          meta: ok ? `${config.dims.format(d.key, x, { unit: true, spec: d })} · ${ord(p)} percentile` : 'not measured for this galaxy',
+          title: proxy ? 'NED r-band exponential effective radius (Rₑ†)' : r90Density ? 'PHANGS log Σ★ = log₁₀[M★/(π R90²)] (M☉ kpc⁻²)' : lsrRedshift ? 'Approximate LSR redshift: z ≈ vLSR/c' : dimTitle(d),
+          meta: (ok ? `${config.dims.format(d.key, x, { unit: true, spec: d })} · ${ord(p)} percentile${values ? ' of SDSS values; PHANGS measurement' : ''}` : 'not measured for this galaxy') + (lsrRedshift ? '. Derived from the catalogue systemic velocity; LSR frame differs from SDSS spectroscopic redshift.' : ''),
         }, 'left');
         blk.append(row);
       }
@@ -680,7 +701,49 @@ export function initInspector(app, mount, ui) {
   app.events.on('render', placeReticle);
 
   // ------------------------------------------------------------------ wiring
+  function phangsStripNote() {
+    const region = inspectedPhangs?.nebula ? 'H II-region nebular measurements; all other properties are host-galaxy values. ' : '';
+    return region + (app.overlays.phangs.sizeMode === 'ned-exponential'
+      ? 'Rₑ† is the NED r-band exponential semi-major radius, compared on the SDSS Petrosian R₅₀ axis. Bars show SDSS percentiles.'
+      : 'PHANGS measurements; bars show percentiles relative to SDSS.') +
+      ' PHANGS Σ★ uses total M★/(π R90²), a circular area; SDSS uses M★/(2π R₅₀²). z† ≈ vLSR/c uses the catalogue systemic velocity in the LSR frame.';
+  }
+  app.events.on('phangs:measurements', () => {
+    if (view !== 'phangs' || !inspectedPhangs) return;
+    body.querySelector('.phangs-strip-note').textContent = phangsStripNote();
+    body.querySelector('.strips').replaceWith(galaxyStrips(null, app.overlays.phangs.values(inspectedPhangs), app.overlays.phangs.sizeMode === 'ned-exponential'));
+  });
+  app.events.on('phangs:inspect', ({ row, details }) => {
+    view = 'phangs';
+    gal = null;
+    inspectedPhangs = row;
+    retRow = null;
+    placeReticle();
+    panel.dataset.view = 'phangs';
+    kind.textContent = row.nebula ? 'PHANGS · MUSE v3' : 'PHANGS · v1p6';
+    ident.textContent = row.name.toUpperCase() + (row.nebula ? ` · H II ${row.nebula.id}` : '');
+    const position = row.nebula || row;
+    setTip(ident, { title: ident.textContent, meta: `α ${position.ra?.toFixed(5) ?? 'Unavailable'}°  δ ${position.dec?.toFixed(5) ?? 'Unavailable'}°` }, 'bottom');
+    bBack.hidden = !store.get().selection;
+    links.replaceChildren(
+      linkBtn('sphere', 'SkyServer explorer', `https://skyserver.sdss.org/dr17/VisualTools/explore/summary?ra=${row.ra}&dec=${row.dec}`),
+      linkBtn('viewer', 'Legacy Survey viewer', `${LS}?ra=${row.ra}&dec=${row.dec}&layer=sdss&zoom=12&mark=${row.ra},${row.dec}`));
+    const im = buildImage(null, row);
+    body.replaceChildren(im.frame, buildPhangsChips(row), h('p', { class: 'phangs-strip-note', text: phangsStripNote() }),
+      galaxyStrips(null, app.overlays.phangs.values(row), app.overlays.phangs.sizeMode === 'ned-exponential'), details);
+    body.scrollTop = 0;
+    setOpen(true);
+    im.load('dss', false);
+    reveal(row);
+  });
+  app.events.on('phangs:closed', () => {
+    inspectedPhangs = null;
+    if (view !== 'phangs') return;
+    view = 'none';
+    setOpen(false);
+  });
   app.events.on('inspect', ({ index }) => {
+    inspectedPhangs = null;
     retRow = index;
     placeReticle();
     if (index != null) {
@@ -701,7 +764,7 @@ export function initInspector(app, mount, ui) {
   app.events.on('select', ({ count }) => {
     tab.querySelector('b').textContent = count ? fmtInt(count) : '';
     if (count) {
-      if (view !== 'galaxy') {
+      if (view !== 'galaxy' && view !== 'phangs') {
         showSelection();
         setOpen(true);
         revealMask(store.get().selection?.mask);
@@ -732,6 +795,7 @@ export function initInspector(app, mount, ui) {
       return view;
     },
     close() {
+      if (view === 'phangs') { app.overlays.phangs.close(); return; }
       if (view === 'galaxy') actions.inspect(null);
       else setOpen(false);
     },

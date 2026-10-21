@@ -1,4 +1,4 @@
-# Galaxy Manifold — design & build contract
+# PHANGS Galaxy Manifold — design & build contract
 
 This file is the single source of truth for everyone building this project. Every module,
 data file, and agent builds against it. If you must deviate, record the deviation in §19 at
@@ -548,7 +548,7 @@ horizontally.
 ## 13. UI components
 
 ### 13.1 Top bar
-The wordmark `GALAXY MANIFOLD` sits on the left in Michroma, with a small starburst glyph.
+The wordmark `PHANGS GALAXY MANIFOLD` sits on the left in Michroma. The original starburst remains until the PHANGS logo asset is supplied.
 Next to it is a tiny data badge (`N 651,234` in Space Mono, `--cream-3`). The **preset
 cartridges** sit center-right (§13.5). An ⓘ button on the far right opens the about overlay.
 

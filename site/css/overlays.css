@@ -2,6 +2,94 @@
    hover card. Rulers, trends, curves, the lasso and the mosaic are drawn on the #overlay and
    #tiles canvases (js/view/overlays/). */
 
+/* Independent PHANGS comparison sample, above the SDSS rendering. */
+.phangs-controls {
+  position: absolute;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--hair-25);
+  border-radius: var(--r-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .25);
+  font-size: 12px;
+  color: var(--cream);
+}
+.phangs-controls { top: 12px; right: 12px; max-width: min(270px, calc(100% - 90px)); pointer-events: auto; z-index: 2; }
+.phangs-controls label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.phangs-controls b { color: var(--cream-2); font: 400 8px/1.4 var(--font-display); letter-spacing: var(--track-display); }
+.phangs-controls label > span { margin-left: auto; font: 400 10px/1.4 var(--font-mono); color: var(--cream-2); }
+.phangs-controls-heading { display: flex; align-items: center; gap: 8px; }
+.phangs-controls-heading > span { margin-left: auto; min-width: 0; font: 400 10px/1.4 var(--font-mono); color: var(--cream-2); text-align: right; }
+.phangs-controls small { display: block; margin-top: 5px; font-size: 10px; color: var(--cream-3); }
+.survey-overlay-toggle { display: flex; align-items: center; justify-content: space-between; gap: 5px; cursor: pointer; }
+.survey-overlay-toggle input { appearance: none; position: relative; flex: none; width: 25px; height: 14px; margin: 0; border: 1px solid var(--hair-35); border-radius: var(--r-pill); background: var(--bg); cursor: pointer; }
+.survey-overlay-toggle input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--cream-3); }
+.survey-overlay-toggle input:checked { border-color: var(--teal); }
+.survey-overlay-toggle input:checked::before { left: 13px; background: var(--teal); }
+.survey-overlay-toggle input:focus-visible { outline: 1.5px solid var(--orange); outline-offset: 3px; }
+.survey-overlay-toggle input:disabled { opacity: .4; cursor: default; }
+.phangs-status { margin-top: 3px; font-size: 10px; color: var(--cream-2); }
+.phangs-status:empty { display: none; }
+.phangs-size-control { margin-top: 7px; border-top: 1px solid var(--hair-15); padding-top: 6px; }
+.phangs-size-control span { margin-left: 0 !important; white-space: nowrap; }
+.phangs-size-control select { min-width: 0; max-width: 200px; font: 400 10px/1.5 var(--font-ui); border: 1px solid var(--hair-25); border-radius: 4px; color: var(--cream-2); background: var(--bg); }
+.phangs-size-control[hidden], .phangs-size-note[hidden], .phangs-sigma-note[hidden] { display: none; }
+.phangs-nebula-controls { margin-top: 7px; border-top: 1px solid var(--hair-15); padding-top: 6px; }
+.phangs-nebula-controls > summary { cursor: pointer; font-size: 11px; color: #e8b85c; }
+.phangs-nebula-controls label { margin-top: 6px; justify-content: space-between; }
+.phangs-nebula-controls label > span { margin-left: 0; }
+.phangs-nebula-controls select { min-width: 0; max-width: 180px; font: 400 11px/1.5 var(--font-ui); border: 1px solid var(--hair-25); border-radius: 4px; color: var(--cream-2); background: var(--bg); }
+.phangs-nebula-controls button { width: 100%; margin-top: 7px; padding: 5px 6px; font: 400 10px/1.4 var(--font-ui); border: 1px solid var(--hair-25); border-radius: 4px; color: var(--cream); background: var(--bg); cursor: pointer; }
+.phangs-nebula-controls button[hidden] { display: none; }
+.phangs-nebula-controls :is(select, button):focus-visible { outline: 1.5px solid var(--orange); outline-offset: 2px; }
+.phangs-nebula-details { padding-bottom: 10px; border-bottom: 1px solid var(--hair-15); }
+.phangs-nebula-details small { display: block; }
+.phangs-marker, .phangs-counterpart {
+  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
+  border: 2px solid #7de2d1; border-radius: 50%; background: #0b0e1340;
+  padding: 0; pointer-events: auto; cursor: pointer;
+}
+.phangs-marker:hover, .phangs-marker:focus-visible { outline: 2px solid var(--cream); outline-offset: 3px; }
+.phangs-marker.phangs-image { left: -24px; top: -24px; width: 48px; height: 48px; border-radius: 6px; box-shadow: 0 2px 8px #0009; pointer-events: none; }
+.phangs-image > img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; pointer-events: none; }
+.phangs-marker > img[hidden] { display: none; }
+.phangs-image:focus-visible { z-index: 3 !important; }
+.phangs-image .phangs-name { top: 47px; left: 12px; }
+.con-phangs-images { display: grid; place-items: center; gap: 2px; width: 39px; min-height: 34px; padding: 3px 2px; border: 1px solid var(--hair-25); border-radius: 8px; }
+.con-phangs-images .i { display: block; width: 17px; height: 17px; }
+.con-phangs-images small { font: 400 5.5px/1 var(--font-display); letter-spacing: .02em; }
+.con-phangs-images[aria-pressed="true"] { color: #7de2d1; border-color: #7de2d1; background: #7de2d119; }
+.con-phangs-images:disabled { opacity: .4; cursor: default; }
+.phangs-marker .phangs-name { position: absolute; top: 13px; left: 8px; white-space: nowrap; color: #7de2d1; background: #0b0e13e6; padding: 2px 4px; font-size: 11px; pointer-events: none; }
+.phangs-counterpart { left: -9px; top: -9px; width: 18px; height: 18px; border-color: #fff; pointer-events: none; }
+.phangs-properties { margin-top: 18px; font-size: 12px; }
+.phangs-properties h4 { margin-bottom: 5px; }
+.phangs-properties p { margin: 5px 0; overflow-wrap: anywhere; }
+.phangs-properties dl { margin: 12px 0; }
+.phangs-properties dt { font-size: 10px; opacity: .7; margin-top: 7px; }
+.phangs-properties dd { margin: 0; overflow-wrap: anywhere; }
+.phangs-properties > details { padding: 10px 0; border-bottom: 1px solid var(--hair-15); }
+.phangs-properties summary { cursor: pointer; color: var(--cream); }
+.phangs-properties > details > summary { font-size: 12px; font-weight: 500; }
+.phangs-properties summary:focus-visible { outline: 1.5px solid var(--teal); outline-offset: 3px; }
+.phangs-context { margin: 12px 0; }
+.phangs-chip-group { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 9px 0; }
+.phangs-chip-heading { width: 100%; font: 400 9px/1.5 var(--font-mono); color: var(--cream-3); }
+.phangs-chip { padding: 4px 7px; border: 1px solid var(--hair-25); border-radius: var(--r-pill); color: var(--cream-2); background: var(--bg-2); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.observations .phangs-chip { color: #7de2d1; border-color: rgba(125, 226, 209, .3); background: rgba(125, 226, 209, .07); }
+.observations .phangs-chip.awaiting { background: transparent; border-style: dashed; }
+.phangs-strip-note { margin: 9px 0; font-size: 10px; color: var(--cream-3); }
+.phangs-note { font-size: 10px; opacity: .75; }
+.phangs-controls[hidden], .phangs-size-controls[hidden], .phangs-nebula-controls[hidden],
+.phangs-properties[hidden], .phangs-marker[hidden], .phangs-name[hidden], .phangs-counterpart[hidden] { display: none; }
+@media (max-width: 760px) {
+  .phangs-controls { max-width: min(245px, calc(100% - 70px)); padding: 6px 8px; }
+}
+@media (max-width: 759.98px) {
+  .survey-rail .survey-rail-head { display: grid; flex: none; min-width: 86px; }
+  .survey-rail-head > span { display: none; }
+  .survey-overlay-toggle { min-height: 30px; }
+}
+
 /* full-stage layer inside #stage-ui that never takes pointer events itself */
 #stage-ui > .ov-layer {
   position: absolute;

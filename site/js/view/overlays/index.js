@@ -34,6 +34,7 @@ import { createLiterature } from './literature.js';
 import { createLasso } from './lasso.js';
 import { createMosaic } from './mosaic.js';
 import { createTighten } from './tighten.js';
+import { createPhangs } from './phangs.js?v=2';
 import { beginCanvas, MONO } from './draw.js';
 
 const DIM_TYPES = ['application/x-galaxy-dim', 'text/x-galaxy-dim', 'text/x-dim', 'text/plain'];
@@ -87,6 +88,7 @@ export function initOverlays(app) {
   const trends = createTrends(app, ov);
   const mosaic = createMosaic(app, ov);
   const pursuit = createTighten(app, ov, axes);
+  const phangs = createPhangs(app, ov);
   app.pursuit = pursuit;
 
   function drawOverlay(now) {
@@ -109,6 +111,7 @@ export function initOverlays(app) {
     literature.draw(ctx, now);
     lasso.draw(ctx, now);
     if (s.overlays.axes !== false) axes.draw(ctx, now);
+    phangs.draw(ctx);
     if (more) ov.invalidate();
     const ms = performance.now() - t0;
     timing.overlayMs = timing.overlayMs ? 0.9 * timing.overlayMs + 0.1 * ms : ms;
@@ -312,6 +315,7 @@ export function initOverlays(app) {
     trends,
     lasso,
     mosaic,
+    phangs,
     redraw() {
       ov.invalidate();
       mosaic.invalidate();
