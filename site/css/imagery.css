@@ -24,3 +24,14 @@
   .gimg-layers button { min-height: 32px; }
   .gimg-status { padding-top: 90px; }
 }
+
+/* Keep the static survey and interactive JWST map visible together. */
+.hips-iframe { display: block; width: 100%; height: 100%; border: 0; }
+.galaxy-maps.with-hips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.galaxy-maps.with-hips > .gimg { width: 100%; max-width: 300px; height: auto; aspect-ratio: 1; }
+@media (min-width: 760px) {
+  #inspector.hips-expanded { --inspector-w: min(680px, calc(100vw - 180px)); }
+}
+@media (max-width: 759.98px) {
+  .galaxy-maps.with-hips { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}

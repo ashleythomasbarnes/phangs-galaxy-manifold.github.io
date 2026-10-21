@@ -8,7 +8,7 @@ import { initTooltips } from './tooltip.js';
 import { initSplash } from './splash.js';
 import { createDnd } from './dnd.js';
 import { initHeader } from './header.js?v=2';
-import { initRail } from './rail.js';
+import { initRail } from './rail.js?v=2';
 import { initConsole } from './console.js';
 import { initInspector } from './inspector.js?v=2';
 import { initHover } from './hover.js?v=2';

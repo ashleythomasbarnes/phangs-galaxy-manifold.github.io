@@ -1599,3 +1599,7 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 
 .phangs-controls .phangs-filter-summary { color: var(--cream-2); }
 .phangs-filter-summary[hidden] { display: none; }
+
+/* Array choices belong only to the nominal PHANGS ALMA survey. */
+.survey-array-subsection { margin: 6px 0 12px 18px; padding-left: 10px; border-left: 1px solid var(--hair-15); }
+.survey-array-subsection h3 { margin: 4px 8px; }

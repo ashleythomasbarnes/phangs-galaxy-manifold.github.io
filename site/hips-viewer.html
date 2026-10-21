@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NGC 628 JWST HiPS</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Space+Mono&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/imagery.css">
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; background: #05070a; color: var(--cream); }
+    #aladin { position: absolute; inset: 0; }
+    nav.gimg-layers { z-index: 10; grid-template-columns: 2fr .6fr .6fr 1.3fr; }
+    nav button { cursor: pointer; }
+    #status { position: absolute; z-index: 10; inset: 50px 12px auto; padding: 8px; background: #0b0e13dc; font: 11px/1.5 var(--font-mono); pointer-events: none; }
+    #status:empty { display: none; }
+    #status.error { color: #ffbc9e; }
+    .aladin-location { display: none !important; }
+    .aladin-fov, .aladin-fov * { font: 400 9.5px/1 var(--font-mono) !important; color: var(--cream) !important; }
+  </style>
+</head>
+<body>
+  <div id="aladin" aria-label="Interactive JWST sky map"></div>
+  <nav class="gimg-layers" aria-label="JWST HiPS controls">
+    <button id="jwst" class="on" type="button" disabled aria-pressed="true" title="JWST MIRI F770W; click to reload">JWST F770W</button>
+    <button id="zoom-out" type="button" disabled aria-label="Zoom out">−</button>
+    <button id="zoom-in" type="button" disabled aria-label="Zoom in">+</button>
+    <button id="reset" type="button" disabled>Reset</button>
+  </nav>
+  <div id="status" role="status" aria-live="polite">Loading JWST HiPS…</div>
+  <script type="module" src="js/ui/hips-viewer.js"></script>
+</body>
+</html>

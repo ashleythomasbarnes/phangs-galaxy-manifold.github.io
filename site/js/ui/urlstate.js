@@ -14,7 +14,7 @@
 // written with a debounced history.replaceState on every change.
 
 import { debounce } from './dom.js';
-import { normalizeSurveyFilters } from '../data/surveys.js';
+import { normalizeSurveyFilters } from '../data/surveys.js?v=2';
 import { nebulaOptions } from '../data/nebulae.js';
 
 const OVERLAY_KEYS = { t: 'trends', l: 'literature', a: 'axes' };
@@ -89,7 +89,7 @@ export function initUrlState(app, ui) {
     const nebula = nebulaOptions(s.phangs);
     if (nebula.display !== 'summary') P.set('phnd', nebula.display);
     if (nebula.summary !== 'mean') P.set('phnm', nebula.summary);
-    const surveys = Object.entries(normalizeSurveyFilters(s.phangs?.surveys)).filter(([, f]) => f).map(([id, f]) => `${id}:${f.status}:${f.array}`).join(',');
+    const surveys = Object.entries(normalizeSurveyFilters(s.phangs?.surveys)).filter(([, f]) => f).map(([id, f]) => `${id}:${f.status}:${f.array}${f.program ? `:${f.program}` : ''}`).join(',');
     if (surveys) P.set('phf', surveys);
     if (s.overlays.phangs === false) P.set('pho', '0');
     if (s.mode === 'mosaic') P.set('m', 'mosaic');
@@ -185,8 +185,8 @@ export function initUrlState(app, ui) {
     for (const [c, name] of Object.entries(OVERLAY_KEYS)) actions.setOverlay(name, on == null ? true : on.includes(c));
     actions.setMode(P.get('m') === 'mosaic' ? 'mosaic' : 'glow');
     const surveys = Object.fromEntries((P.get('phf') || '').split(',').filter(Boolean).map(part => {
-      const [id, status, array] = part.split(':');
-      return [id, { status, array }];
+      const [id, status, array, program] = part.split(':');
+      return [id, { status, array, program }];
     }));
     const nebula = nebulaOptions({ nebulaDisplay: P.get('phnd'), nebulaSummary: P.get('phnm') });
     store.set({ phangs: { sizeMode: P.get('phs') === 'ned-exponential' ? 'ned-exponential' : 'none',
