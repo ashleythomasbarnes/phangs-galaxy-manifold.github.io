@@ -270,6 +270,25 @@ export function initConsole(app, mount, ui) {
     () => actions.setOverlay('literature', !store.get().overlays.literature));
   const tLasso = tog('lasso', 'lasso', 'Lasso', 'Draw to select; shift adds, alt subtracts. The selection follows every rotation', 'L',
     () => actions.setTool(store.get().tool === 'lasso' ? 'pan' : 'lasso'));
+  const tighten = h('button', { class: 'tog ibtn tog-tighten', type: 'button', 'aria-label': 'Tighten relation', html: icon('tighten') });
+  setTip(tighten, { title: 'Tighten', sub: 'Keep y; search x for the tightest relation (projection pursuit)' }, 'top');
+  tighten.addEventListener('click', async () => {
+    if (tighten.classList.contains('busy')) return;
+    tighten.classList.add('busy');
+    tighten.setAttribute('aria-busy', 'true');
+    try {
+      const result = await app.pursuit.tighten({});
+      if (result === false) {
+        tighten.classList.add('nope');
+        setTimeout(() => tighten.classList.remove('nope'), 700);
+      }
+    } catch (err) {
+      console.error('tighten failed', err);
+    } finally {
+      tighten.classList.remove('busy');
+      tighten.removeAttribute('aria-busy');
+    }
+  });
   const bReset = h('button', { class: 'tog ibtn', type: 'button', 'aria-label': 'Reset the view', html: icon('reset') });
   setTip(bReset, { title: 'Reset', sub: 'Clear the z and color-value filters and return to the current canonical view', key: 'R' }, 'top');
   bReset.addEventListener('click', () => actions.resetView());
@@ -300,7 +319,7 @@ export function initConsole(app, mount, ui) {
     sep(),
     h('div', { class: 'con-group con-knobs' }, gain.el, size.el),
     sep(),
-    h('div', { class: 'con-group con-toggles' }, tTrends, tLit, tLasso, h('i', { class: 'con-sep sm', 'aria-hidden': 'true' }), bReset, bShare));
+    h('div', { class: 'con-group con-toggles' }, tighten, tTrends, tLit, tLasso, h('i', { class: 'con-sep sm', 'aria-hidden': 'true' }), bReset, bShare));
   mount.append(bar);
 
   // ------------------------------------------------------------------ state sync

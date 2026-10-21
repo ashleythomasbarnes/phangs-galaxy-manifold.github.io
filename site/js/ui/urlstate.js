@@ -6,10 +6,15 @@
 //   o   overlays that are on (t l a; omitted = all)   · v  camera bounds x0,x1,y0,y1 (u)
 //   g   inspected row   · r  gain,pointSize   · mc  mosaic cell,scale
 //   ts  tour set   · sp  tour speed
+//   phs  PHANGS size comparison ('ned-exponential'; omitted = no size mapping)
+//   phnd MUSE display ('regions'|'both'; omitted = 'summary')
+//   phnm MUSE summary ('median'|'summed'; omitted = 'mean')
 // Restored during initUI (before the columns load, so the first paint is the linked view);
 // written with a debounced history.replaceState on every change.
 
 import { debounce } from './dom.js';
+import { normalizeSurveyFilters } from '../data/surveys.js';
+import { nebulaOptions } from '../data/nebulae.js';
 
 const OVERLAY_KEYS = { t: 'trends', l: 'literature', a: 'axes' };
 
@@ -78,6 +83,13 @@ export function initUrlState(app, ui) {
     }
     P.set('c', s.color == null ? '-' : s.color);
     if (s.filters.needColor) P.set('cv', '1');
+    if (s.phangs?.sizeMode === 'ned-exponential') P.set('phs', 'ned-exponential');
+    const nebula = nebulaOptions(s.phangs);
+    if (nebula.display !== 'summary') P.set('phnd', nebula.display);
+    if (nebula.summary !== 'mean') P.set('phnm', nebula.summary);
+    const surveys = Object.entries(normalizeSurveyFilters(s.phangs?.surveys)).filter(([, f]) => f).map(([id, f]) => `${id}:${f.status}:${f.array}`).join(',');
+    if (surveys) P.set('phf', surveys);
+    if (s.overlays.phangs === false) P.set('pho', '0');
     if (s.mode === 'mosaic') P.set('m', 'mosaic');
     if (s.filters.z) P.set('z', `${num(s.filters.z[0], 4)},${num(s.filters.z[1], 4)}`);
     const k = [];
@@ -170,6 +182,14 @@ export function initUrlState(app, ui) {
     const on = P.get('o');
     for (const [c, name] of Object.entries(OVERLAY_KEYS)) actions.setOverlay(name, on == null ? true : on.includes(c));
     actions.setMode(P.get('m') === 'mosaic' ? 'mosaic' : 'glow');
+    const surveys = Object.fromEntries((P.get('phf') || '').split(',').filter(Boolean).map(part => {
+      const [id, status, array] = part.split(':');
+      return [id, { status, array }];
+    }));
+    const nebula = nebulaOptions({ nebulaDisplay: P.get('phnd'), nebulaSummary: P.get('phnm') });
+    store.set({ phangs: { sizeMode: P.get('phs') === 'ned-exponential' ? 'ned-exponential' : 'none',
+      surveys: normalizeSurveyFilters(surveys), nebulaDisplay: nebula.display, nebulaSummary: nebula.summary } }, { source: 'url' });
+    actions.setOverlay('phangs', P.get('pho') !== '0');
     if (P.get('r')) {
       const [g, ps] = P.get('r').split(',').map(Number);
       actions.setRender({ gain: Number.isFinite(g) ? g : 1, pointSize: Number.isFinite(ps) ? ps : 2 });

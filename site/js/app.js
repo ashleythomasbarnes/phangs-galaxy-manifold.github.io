@@ -59,7 +59,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     presetId: null,
     color: null,
     mode: 'glow',
-    overlays: { trends: true, literature: true, axes: true },
+    overlays: { trends: true, literature: true, axes: true, phangs: true },
     filters: { z: null, cats: { ...catMasksAll }, needColor: false },
     tour: { playing: false, set: defaultTourSet(data.dims), speed: 1 },
     render: { gain: 1, pointSize: 2, bloom: 0.3 },

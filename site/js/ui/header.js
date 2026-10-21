@@ -28,15 +28,25 @@ export function initHeader(app, mount, ui) {
     meta: `${fmtInt(app.data.n)} in ${app.data.manifest.title || 'the sample'}`,
   }), 'bottom');
 
-  const byline = h('a', { class: 'tb-by', href: 'https://jwuphysics.github.io', target: '_blank', rel: 'noopener' },
-    h('span', { text: 'Built by ' }), h('b', { text: 'John Wu' }));
+  const phangsCount = h('b', { text: '…' });
+  const phangsBadge = h('span', { class: 'tb-badge tb-phangs', role: 'status', 'aria-live': 'off' },
+    h('i', { text: 'N PHANGS' }), phangsCount);
+  let phangs = null;
+  setTip(phangsBadge, () => ({
+    title: phangs ? `${phangs.visible} PHANGS galaxies visible / ${phangs.total} in the table${phangs.regionsVisible ? `; ${fmtInt(phangs.regionsVisible)} H II regions visible` : ''}` : 'Loading PHANGS',
+    meta: 'Independent comparison sample; counts follow observation filters, axes, camera and the overlay toggle.',
+  }), 'bottom');
+  app.events.on('phangs:count', stats => {
+    phangs = stats;
+    phangsCount.textContent = stats.total ? `${stats.visible}/${stats.total}` : '–';
+  });
 
   const carts = h('div', { class: 'tb-carts' });
   const about = h('button', { class: 'tb-about ibtn', type: 'button', 'aria-label': 'About, credits and shortcuts', html: icon('info') });
   setTip(about, { title: 'About', sub: 'Data, literature, shortcuts, caveats', key: '?' }, 'bottom');
   about.addEventListener('click', () => ui.about?.toggle());
 
-  mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge, byline), carts, about));
+  mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge, phangsBadge), carts, about));
 
   const presets = initPresets(app, carts, ui);
 

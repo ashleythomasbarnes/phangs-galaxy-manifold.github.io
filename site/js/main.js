@@ -4,8 +4,8 @@
 import { createApp } from './app.js';
 import { loadManifest, resolveBase } from './data/loader.js';
 import { Renderer } from './gl/renderer.js';
-import { initUI } from './ui/index.js';
-import { initOverlays } from './view/overlays/index.js';
+import { initUI } from './ui/index.js?v=2';
+import { initOverlays } from './view/overlays/index.js?v=2';
 
 const RING = 2 * Math.PI * 46;
 

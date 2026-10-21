@@ -3,3 +3,5 @@
 // the directory and never load this file.
 import('./frame.test.mjs');
 import('./overlays.test.mjs');
+import('./phangs.test.mjs');
+import('./nebulae.test.mjs');

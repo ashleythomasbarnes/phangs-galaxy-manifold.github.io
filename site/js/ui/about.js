@@ -34,9 +34,8 @@ const KEYS = [
 ];
 
 const GESTURES = [
-  ['drag a spoke', 'rotate through that dimension'],
-  ['double-click a spoke', 'rotate it out'],
-  ['drag a token', 'onto an axis or the compass'],
+  ['observation chips', 'filter the PHANGS sample by survey and array'],
+  ['More views', 'choose another reference projection'],
   ['scroll · drag · double-click', 'zoom · pan · fit'],
 ];
 
@@ -75,7 +74,7 @@ export function initAbout(app, ui) {
     close.addEventListener('click', hide);
 
     const lede = h('p', { class: 'ab-lede' },
-      'Galaxy scaling relations of the SDSS Main Galaxy Sample as rotating two-dimensional projections of a high-dimensional manifold. Read the ',
+      'Explore PHANGS observation coverage alongside galaxy scaling relations of the SDSS Main Galaxy Sample. Read the ',
       h('a', { href: 'https://jwuphysics.github.io/blog/2026-10-01/galaxy-manifold/', target: '_blank', rel: 'noopener noreferrer', text: 'blog post' }),
       ' for more information.');
 

@@ -1,5 +1,35 @@
 # Galaxy Manifold — core API (as implemented)
 
+PHANGS is an independent comparison overlay (`app.overlays.phangs`). Its `ready`
+promise resolves to the exported catalogue or null; `selected` is a PHANGS name
+or null, and `close()` clears PHANGS inspection. `setOverlay('phangs', bool)`
+controls visibility (on by default). PHANGS rows never enter `app.data`, the SDSS
+selection mask, statistics or filters. The overlay emits `phangs:hover`
+`{row, sx, sy}` (or `{row:null}`), `phangs:inspect` `{row, details}` and
+`phangs:closed` to use the existing hover card and inspector drawer. PHANGS bars
+are percentiles against the SDSS distributions, using only measured PHANGS values.
+`row.values.logSigma` uses total `props_mstar / (π R90_kpc²)` in M☉ kpc⁻²,
+logged to base 10. The radius comes from `size_r90` and the PHANGS distance;
+the circular-area estimate differs from the SDSS `Mstar/(2π R50²)` definition.
+`phangs.values(row)` and `phangs.project(row)` respect the optional
+`store.phangs.sizeMode` (`none` by default, or `ned-exponential`). The latter maps
+a referenced NED r-band exponential half-light radius onto `logR50` for comparison;
+it does not modify `row.values` or any SDSS data. `phangs:size` announces size changes;
+`phangs:measurements` refreshes inspector bars after size, summary or catalogue changes.
+`phangs:count` reports `{visible,total,matching,supported,enabled,regionsVisible}`
+for the header. Shared view links store the mode as `phs=ned-exponential`.
+
+MUSE uses `store.phangs.nebulaDisplay` (`summary`, `regions`, `both`; default
+`summary`) and `nebulaSummary` (`mean`, `median`, `summed`; default `mean`). Links
+encode nondefault choices as `phnd` and `phnm`. Only `N2Ha`, `O3Hb`, `HaHb` and
+`OH_PP04` are added to the PHANGS values; `OH` (T04) and stellar `AV` stay missing.
+`phangs.nebulae.ready` resolves to the summary catalogue or null. `loadRegions()`
+loads the separate full catalogue on demand, resolving to the export or null.
+`nebulae.stats` reports `{visible,matching,total,drawMs}` for region rendering.
+Region inspection/hover uses a host row with a `nebula` member containing region
+ID, coordinates, measured values, native properties and flags. Images and global
+properties remain those of the host. No region enters the SDSS data or statistics.
+
 For the UI agent (`js/ui/*`, `css/ui.css`) and the overlays agent (`js/view/overlays/*`,
 `css/overlays.css`). The contract is DESIGN.md §10–§12; this file records what the code does,
 including the few additions and deviations (logged in DESIGN.md §19).
@@ -196,6 +226,8 @@ children get `auto`, so UI mounted there keeps its events.
   Handlers get `{sx, sy, X, Y, dx, dy, startX, startY, event, app}`; `onDown` may return
   `false` to decline; `onUp` returning `true` suppresses the click.
 - `addClickHandler(fn(ctx) → true to consume, priority=0) → off`; `ctx.pick(r)` picks.
+- `addHoverHandler(fn({sx,sy} | null) → true to consume) → off` lets canvas overlays
+  handle hover before the SDSS picker; `null` clears hover during gestures/motion.
 - `hoverRadius` (10 px), `clearHover()`, `refreshHover()`.
 
 ## ThumbCache (`app.thumbs`)

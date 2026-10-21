@@ -7,6 +7,8 @@ import { axisValue } from '../math/frame.js';
 import { sampleColormapHex } from '../gl/colormaps.js';
 import { NEUTRAL } from '../config/style.js';
 import { shortKids, catToken } from './uiconfig.js';
+import { phangsImageUrl } from '../data/phangs.js';
+import { NEBULA_KEYS, NEBULA_SUMMARIES } from '../data/nebulae.js';
 
 const DWELL = 120;
 
@@ -62,8 +64,11 @@ export function initHover(app, mount, ui) {
   }
 
   function show(i, sx, sy, atCursor = false) {
+    if (app.overlays?.phangs?.hovering) return;
     if (app.isMoving() || ui.dnd?.active || document.documentElement.classList.contains('dragging')) return;
     shownI = i;
+    img.onload = img.onerror = null;
+    img.alt = '';
     const k = app.thumbs?.available ? app.thumbs.forRow(i) : -1;
     card.classList.toggle('has-pic', k >= 0);
     if (k >= 0) {
@@ -96,6 +101,8 @@ export function initHover(app, mount, ui) {
   }
 
   app.events.on('hover', ({ index, sx, sy }) => {
+    if (app.overlays?.phangs?.nebulae.hovering) return;
+    if (app.overlays?.phangs?.hovering) { hide(); return; }
     const mosaicTile = app.store.get().mode === 'mosaic' && Number.isFinite(sx) ? app.overlays?.mosaic?.tileAt?.(sx, sy) : null;
     if (index < 0 && !(mosaicTile && mosaicTile.row >= 0)) {
       hide();
@@ -127,6 +134,47 @@ export function initHover(app, mount, ui) {
       }, shownI >= 0 ? 40 : DWELL);
     }
   });
+  app.events.on('phangs:hover', ({ row, sx, sy }) => {
+    hide();
+    if (!row || app.isMoving()) return;
+    timer = setTimeout(() => {
+      if (app.isMoving() || ui.dnd?.active) return;
+      const p = app.overlays.phangs.project(row);
+      const values = app.overlays.phangs.values(row);
+      const list = [{ k: 'PHANGS', v: row.name.toUpperCase() }];
+      if (row.nebula) list.push({ k: 'MUSE H II', v: `Region ${row.nebula.id}` });
+      else if (NEBULA_KEYS.some(key => Number.isFinite(values[key])))
+        list.push({ k: 'MUSE summary', v: NEBULA_SUMMARIES[app.overlays.phangs.nebulae.options.summary] });
+      for (const col of [0, 1]) {
+        const info = app.axisInfo(col);
+        if (!info) continue;
+        const valid = info.terms.every(t => Number.isFinite(values[data.dims[t.index].key]));
+        const value = valid ? axisValue(info, col === 0 ? p.X : p.Y) : NaN;
+        const sizeProxy = info.single && info.refKey === 'logR50' && app.overlays.phangs.sizeMode === 'ned-exponential';
+        const label = sizeProxy ? 'Rₑ (NED)' : info.single && info.refKey === 'logSigma' ? 'Σ★ (R90)' : info.single ? data.dims[info.ref].short : col === 0 ? 'x' : 'y';
+        const hostValue = row.nebula && info.terms.every(t => !NEBULA_KEYS.includes(data.dims[t.index].key));
+        list.push({ k: hostValue ? `Host ${label}` : label,
+          v: Number.isFinite(value) ? info.single ? config.dims.format(info.refKey, value) : fmtFixed(value, 2) : '–' });
+      }
+      rows.replaceChildren(...list.map(r => h('div', { class: 'hc-row' },
+        h('span', { class: 'hc-k' }, shortKids(r.k)), h('span', { class: 'hc-v', text: r.v }))));
+      // Use the inspector's cutout URL too, so hover/click share the browser image cache.
+      const url = data.manifest?.host?.externalImages === false ? null : phangsImageUrl(row);
+      card.classList.toggle('has-pic', !!url);
+      img.alt = `DSS2 colour image of ${row.name.toUpperCase()}`;
+      img.onload = null;
+      img.onerror = () => card.classList.remove('has-pic');
+      if (url) img.src = url;
+      else img.removeAttribute('src');
+      card.classList.add('on');
+      ring.classList.add('on');
+      ring.style.transform = `translate(${sx}px,${sy}px)`;
+      const W = card.offsetWidth, H = card.offsetHeight;
+      const x = sx + W + 14 > app.camera.width - 8 ? sx - W - 14 : sx + 14;
+      const y = sy + H + 14 > app.camera.height - 8 ? sy - H - 14 : sy + 14;
+      card.style.transform = `translate(${Math.round(clamp(x, 6, app.camera.width - W - 6))}px,${Math.round(clamp(y, 6, app.camera.height - H - 6))}px)`;
+    }, DWELL);
+  });
   app.events.on('frame', ({ animating }) => {
     if (animating) hide();
   });
@@ -134,7 +182,7 @@ export function initHover(app, mount, ui) {
   app.events.on('resize', hide);
   // the card's values (and, in mosaic mode, its galaxy) depend on these
   app.events.on('state', ({ changed }) => {
-    if (changed.some((k) => k === 'mode' || k === 'color' || k === 'filters' || k === 'mosaic')) hide();
+    if (changed.some((k) => k === 'mode' || k === 'color' || k === 'filters' || k === 'mosaic' || k === 'phangs')) hide();
   });
   app.layers.stage.addEventListener('pointerleave', hide);
   app.layers.stage.addEventListener('pointerdown', hide);
