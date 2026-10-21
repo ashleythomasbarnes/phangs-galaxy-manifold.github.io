@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verified literature scaling relations for the Galaxy Manifold site (DESIGN.md section 9).
+"""Verified literature scaling relations for the PHANGS Galaxy Manifold site (DESIGN.md section 9).
 
 Every relation is a function below (``rel_<id>``). Its docstring records the provenance:
 arXiv id, equation or table, the coefficients as printed, the IMF, cosmology,

@@ -5,3 +5,8 @@ import('./frame.test.mjs');
 import('./overlays.test.mjs');
 import('./phangs.test.mjs');
 import('./nebulae.test.mjs');
+import('./search.test.mjs');
+import('./phangs-info.test.mjs');
+import('./imagery.test.mjs');
+import('./phangs-chips.test.mjs');
+import('./presets.test.mjs');

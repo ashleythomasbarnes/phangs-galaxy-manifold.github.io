@@ -74,7 +74,7 @@ export function initAbout(app, ui) {
     close.addEventListener('click', hide);
 
     const lede = h('p', { class: 'ab-lede' },
-      'Explore PHANGS observation coverage alongside galaxy scaling relations of the SDSS Main Galaxy Sample. Read the ',
+      'The SDSS reference sample supplies the background galaxy scaling relations in PHANGS Galaxy Manifold. Read the ',
       h('a', { href: 'https://jwuphysics.github.io/blog/2026-10-01/galaxy-manifold/', target: '_blank', rel: 'noopener noreferrer', text: 'blog post' }),
       ' for more information.');
 
@@ -134,9 +134,11 @@ export function initAbout(app, ui) {
     const sec = (title, ...kids) => h('section', { class: 'ab-sec' }, h('h3', { text: title }), ...kids);
     const panel = h('div', { class: 'ab-panel', role: 'document' },
       h('header', { class: 'ab-head' },
-        h('div', { class: 'ab-brand', html: `${starburstMark('ab-mark')}<span>GALAXY MANIFOLD</span>` }), close),
+        h('div', { class: 'ab-brand' },
+          h('span', { html: starburstMark('ab-mark') }),
+          h('span', { text: 'PHANGS GALAXY MANIFOLD' })), close),
       lede,
-      sec('Data', sources),
+      sec('SDSS reference data', sources),
       h('div', { class: 'ab-grid' },
         h('div', { class: 'ab-col' }, sec('Keys', keys)),
         h('div', { class: 'ab-col' }, sec('Caveats', cav)),
@@ -148,7 +150,7 @@ export function initAbout(app, ui) {
           m.created ? ` · data ${m.created}` : ''),
         h('span', { text: `${data.D} dimensions · ${data.categories.length} categories · ${fmtInt(data.n)} galaxies` })));
 
-    root = h('div', { class: 'about', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'About Galaxy Manifold' },
+    root = h('div', { class: 'about', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'PHANGS Galaxy Manifold, SDSS information' },
       h('div', { class: 'ab-scrim' }), panel);
     root.querySelector('.ab-scrim').addEventListener('click', hide);
     root.addEventListener('keydown', (e) => {

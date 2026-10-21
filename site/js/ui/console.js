@@ -25,6 +25,16 @@ export function initConsole(app, mount, ui) {
   setTip(bMosaic, { title: 'Mosaic', sub: 'Tile the plane with the most typical galaxy of each cell', key: 'M' }, 'top');
   const rocker = h('div', { class: 'rocker', role: 'group', 'aria-label': 'Display mode' }, h('i', { class: 'rk-paddle', 'aria-hidden': 'true' }), bGlow, bMosaic);
   for (const b of [bGlow, bMosaic]) b.addEventListener('click', () => actions.setMode(b.dataset.mode));
+  const bPhangsImages = h('button', { class: 'tog con-phangs-images', type: 'button',
+    'aria-label': 'PHANGS DSS images', 'aria-pressed': 'false' },
+    h('span', { html: icon('image') }), h('small', { text: 'PHANGS' }));
+  setTip(bPhangsImages, { title: 'PHANGS DSS images', sub: 'Replace PHANGS galaxy markers with DSS image tiles at their plot positions. Survey filters still apply; click a tile to inspect.' }, 'top');
+  bPhangsImages.disabled = data.manifest?.host?.externalImages === false;
+  bPhangsImages.addEventListener('click', () => {
+    const current = store.get();
+    const images = !(current.phangs?.images && current.overlays.phangs !== false);
+    store.set({ phangs: { images }, ...(images ? { overlays: { phangs: true } } : {}) });
+  });
 
   // ------------------------------------------------------------------ color dial + legend
   const dialSym = h('span', { class: 'cd-sym' });
@@ -310,7 +320,7 @@ export function initConsole(app, mount, ui) {
 
   const sep = () => h('i', { class: 'con-sep', 'aria-hidden': 'true' });
   const bar = h('div', { class: 'con' },
-    h('div', { class: 'con-group con-mode' }, rocker),
+    h('div', { class: 'con-group con-mode' }, rocker, bPhangsImages),
     sep(),
     colorGroup,
     h('div', { class: 'con-spacer' }),
@@ -331,6 +341,9 @@ export function initConsole(app, mount, ui) {
       bGlow.setAttribute('aria-pressed', s.mode === 'glow' ? 'true' : 'false');
       bMosaic.setAttribute('aria-pressed', s.mode === 'mosaic' ? 'true' : 'false');
       bar.classList.toggle('mosaic', s.mode === 'mosaic');
+    }
+    if (all || changed.includes('phangs') || changed.includes('overlays')) {
+      bPhangsImages.setAttribute('aria-pressed', s.phangs?.images && s.overlays.phangs !== false ? 'true' : 'false');
     }
     if (all || changed.includes('color')) syncColor();
     if (all || changed.includes('filters')) {

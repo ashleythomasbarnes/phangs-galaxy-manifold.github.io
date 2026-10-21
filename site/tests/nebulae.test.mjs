@@ -45,11 +45,11 @@ function fixture(t, fail = '', regionResponse = regions) {
   const store = new Store({ overlays: {}, phangs: {}, selection, tour: { set: ['logM', 'OH_PP04'], speed: 1 },
     filters: { cats: {}, z: null }, render: { gain: 1, pointSize: 2 }, mosaic: { cell: 56, scale: 'fit' } });
   store.subscribe((state, changed) => events.emit('state', { state, changed }));
-  let hover, click;
+  const hovers = [], clicks = [];
   const app = { data, events, store, frame: frame(), isMoving: () => false,
     layers: { stage: new Element() },
     camera: { width: 1200, toScreen: (x, y) => [500 + 10 * x, 500 - 10 * y], viewBounds: () => [-5, 5, -5, 5] },
-    interaction: { clearHover() {}, addHoverHandler(fn) { hover = fn; }, addClickHandler(fn) { click = fn; } },
+    interaction: { clearHover() {}, addHoverHandler(fn) { hovers.push(fn); }, addClickHandler(fn, priority = 0) { clicks.push({ fn, priority }); } },
     filterParams: () => ({}),
     proj: { projectSample: () => ({ X: [0], Y: [0], vis: [1] }) },
     actions: { inspect: index => events.emit('inspect', { index }),
@@ -59,7 +59,9 @@ function fixture(t, fail = '', regionResponse = regions) {
   const ctx = { save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, fillRect() { drawn++; }, arc() {}, stroke() {} };
   const api = createPhangs(app, ov);
   const text = node => [node.textContent || '', ...node.children?.map(text) || []].join(' ');
-  return { app, api, ov, ctx, calls, selection, text, hover: point => hover(point), click: point => click(point),
+  return { app, api, ov, ctx, calls, selection, text,
+    hover: point => point ? hovers.some(fn => fn(point)) : hovers.forEach(fn => fn(null)),
+    click: point => clicks.sort((a, b) => b.priority - a.priority).some(h => h.fn(point)),
     get drawn() { return drawn; }, get point() {
       const host = phangs.galaxies.find(h => h.name === regions.regions[0].galaxy);
       const row = nebulaRow(host, regions.regions[0]);
@@ -108,6 +110,54 @@ test('summaries load without regions; summary changes update inspection without 
   assert.ok(refresh);
   assert.equal(f.app.data.n, manifest.n);
   assert.equal(f.app.store.get().selection, f.selection);
+});
+
+test('contextual PHANGS panels follow contributing axes and retain their settings', async t => {
+  const f = fixture(t);
+  await Promise.all([f.api.ready, f.api.nebulae.ready]);
+  const controls = f.ov.layer.children[1], sizeControls = controls.children[2];
+  const muse = f.api.nebulae.controls;
+  f.api.draw(f.ctx);
+  assert.equal(controls.hidden, false);
+  assert.equal(sizeControls.hidden, true);
+  assert.equal(muse.hidden, false);
+  f.app.store.set({ phangs: { nebulaSummary: 'median', sizeMode: 'ned-exponential' } });
+  f.app.frame = frame({ logM: 1 }, { logSFR: 1 });
+  f.api.draw(f.ctx);
+  assert.equal(controls.hidden, true);
+  assert.equal(sizeControls.hidden, true);
+  assert.equal(muse.hidden, true);
+  for (const key of ['logR50', 'logSigma']) {
+    f.app.frame = frame({ logM: 1 }, { [key]: 1 });
+    f.api.draw(f.ctx);
+    assert.equal(controls.hidden, false);
+    assert.equal(sizeControls.hidden, false);
+    assert.equal(sizeControls.children[0].hidden, key !== 'logR50');
+    assert.equal(sizeControls.children[1].hidden, key !== 'logR50');
+    assert.equal(sizeControls.children[2].hidden, key !== 'logSigma');
+    assert.equal(muse.hidden, true);
+  }
+  f.app.frame = frame({ logR50: 1 }, { logSigma: 1 });
+  f.api.draw(f.ctx);
+  assert.ok(sizeControls.children.every(node => !node.hidden));
+  f.app.frame = frame({ logR50: 1 }, { OH_PP04: 1 });
+  f.api.draw(f.ctx);
+  assert.equal(sizeControls.hidden, false);
+  assert.equal(muse.hidden, false);
+  f.app.actions.setOverlay('phangs', false);
+  f.api.draw(f.ctx);
+  assert.equal(controls.hidden, true);
+  f.app.actions.setOverlay('phangs', true);
+  f.api.draw(f.ctx);
+  assert.equal(controls.hidden, false);
+  assert.equal(f.api.sizeMode, 'ned-exponential');
+  assert.equal(f.api.nebulae.options.summary, 'median');
+  for (const key of NEBULA_KEYS) {
+    f.app.frame = frame({ logM: 1 }, { [key]: 1 });
+    f.api.draw(f.ctx);
+    assert.equal(muse.hidden, false);
+    assert.equal(sizeControls.hidden, true);
+  }
 });
 
 test('full region drawing, projection, picking, filters and display modes', async t => {
@@ -183,15 +233,18 @@ test('shared links restore nebular options and old links retain defaults', async
   f.app.camera.set = () => {};
   f.app.camera.fitBounds = () => {};
   const url = initUrlState(f.app, {});
-  f.app.store.set({ phangs: { nebulaDisplay: 'both', nebulaSummary: 'median' } });
+  f.app.store.set({ phangs: { nebulaDisplay: 'both', nebulaSummary: 'median', images: true } });
   const encoded = url.encode();
   assert.match(encoded, /phnd=both/);
   assert.match(encoded, /phnm=median/);
+  assert.match(encoded, /phi=1/);
   url.restore('#' + encoded);
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'both', summary: 'median' });
+  assert.equal(f.app.store.get().phangs.images, true);
   url.restore('#c=-&phnd=bogus&phnm=bogus');
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'summary', summary: 'mean' });
   url.restore('#c=-');
+  assert.equal(f.app.store.get().phangs.images, false);
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'summary', summary: 'mean' });
 });
 

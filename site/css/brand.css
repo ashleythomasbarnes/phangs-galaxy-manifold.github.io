@@ -1,0 +1,40 @@
+/* PHANGS wordmark and compact header. The original starburst remains until the
+   PHANGS logo asset is supplied. */
+.tb-word { display: grid; gap: 5px; line-height: 1; font-size: 9px; letter-spacing: .22em; }
+.tb-word-prefix { color: var(--cream); font-size: 11px; letter-spacing: .3em; }
+.tb-word-name { color: var(--cream-2); }
+.tb { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 240px) minmax(0, 1fr); gap: 14px; }
+.tb-left { gap: 10px; }
+.tb-search { width: 100%; min-width: 0; }
+.tb-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
+.tb-carts { flex: none; }
+.tb .views-more { height: 34px; gap: 10px; min-width: 76px; border-radius: 8px; }
+.tb .views-more-label { min-width: 0; }
+.tb-info-buttons { display: flex; flex: none; gap: 5px; align-items: center; }
+.tb-info-button { display: grid; place-items: center; gap: 2px; min-width: 34px; padding: 4px 3px; border: 1px solid transparent; border-radius: 6px; color: var(--cream-2); background: transparent; cursor: pointer; }
+.tb-info-button .i { width: 17px; height: 17px; display: block; }
+.tb-info-button small { font: 400 6px/1.2 var(--font-mono); letter-spacing: .04em; }
+.tb-phangs-info { color: #7de2d1; }
+.tb-info-button:hover { background: var(--bg-2); border-color: var(--hair-25); color: var(--cream); }
+.tb-info-button:focus-visible { outline: 1.5px solid var(--orange); outline-offset: 2px; }
+.gm-splash-word { display: grid; gap: 13px; justify-items: center; letter-spacing: .35em; opacity: 1; }
+.gm-splash-prefix { color: var(--cream); font-size: 17px; letter-spacing: .5em; }
+.ab-brand { font-size: 11px; letter-spacing: .2em; }
+@media (max-width: 1150px) {
+  .tb-badge { display: none; }
+}
+@media (max-width: 759.98px) {
+  .tb { grid-template-columns: auto minmax(80px, 1fr) auto; gap: 8px; padding: 0 8px; }
+  .tb-mark { width: 26px; height: 26px; }
+  .tb-word { display: none; }
+  .tb-brand { gap: 0; }
+  .tb-actions { gap: 5px; }
+  .tb-info-buttons { gap: 1px; }
+  .tb-info-button { min-width: 29px; padding-inline: 1px; }
+  .tb-info-button small { font-size: 5px; }
+  .ab-brand { font-size: 9px; letter-spacing: .12em; }
+  .gm-splash-word { font-size: 10px; letter-spacing: .22em; }
+}
+@media (max-width: 430px) {
+  .tb .views-more { min-width: 60px; padding-inline: 8px; }
+}

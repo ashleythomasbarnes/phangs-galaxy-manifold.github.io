@@ -1,0 +1,26 @@
+/* Keep every survey reachable in the inspector's narrow image frame. */
+.gimg-layers {
+  right: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.gimg-layers button {
+  min-width: 0;
+  min-height: 25px;
+  padding: 6px 3px;
+  letter-spacing: .04em;
+  font-size: 7.5px;
+  touch-action: manipulation;
+}
+.gimg-status {
+  padding: 76px 16px 36px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.gimg.failed .gimg-status { color: var(--cream-2); opacity: 1; }
+.gimg.loading::after { pointer-events: none; }
+@media (pointer: coarse) {
+  .gimg-layers button { min-height: 32px; }
+  .gimg-status { padding-top: 90px; }
+}

@@ -9,6 +9,7 @@
 //   phs  PHANGS size comparison ('ned-exponential'; omitted = no size mapping)
 //   phnd MUSE display ('regions'|'both'; omitted = 'summary')
 //   phnm MUSE summary ('median'|'summed'; omitted = 'mean')
+//   phi  PHANGS DSS image tiles ('1'; omitted = marker circles)
 // Restored during initUI (before the columns load, so the first paint is the linked view);
 // written with a debounced history.replaceState on every change.
 
@@ -84,6 +85,7 @@ export function initUrlState(app, ui) {
     P.set('c', s.color == null ? '-' : s.color);
     if (s.filters.needColor) P.set('cv', '1');
     if (s.phangs?.sizeMode === 'ned-exponential') P.set('phs', 'ned-exponential');
+    if (s.phangs?.images === true) P.set('phi', '1');
     const nebula = nebulaOptions(s.phangs);
     if (nebula.display !== 'summary') P.set('phnd', nebula.display);
     if (nebula.summary !== 'mean') P.set('phnm', nebula.summary);
@@ -188,6 +190,7 @@ export function initUrlState(app, ui) {
     }));
     const nebula = nebulaOptions({ nebulaDisplay: P.get('phnd'), nebulaSummary: P.get('phnm') });
     store.set({ phangs: { sizeMode: P.get('phs') === 'ned-exponential' ? 'ned-exponential' : 'none',
+      images: P.get('phi') === '1',
       surveys: normalizeSurveyFilters(surveys), nebulaDisplay: nebula.display, nebulaSummary: nebula.summary } }, { source: 'url' });
     actions.setOverlay('phangs', P.get('pho') !== '0');
     if (P.get('r')) {

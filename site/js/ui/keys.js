@@ -31,6 +31,10 @@ export function initKeys(app, ui) {
   }
 
   function escape() {
+    if (ui.phangsInfo?.open) {
+      ui.phangsInfo.hide();
+      return true;
+    }
     if (ui.about?.open) {
       ui.about.hide();
       return true;
@@ -65,10 +69,11 @@ export function initKeys(app, ui) {
     }
     if (k === '?') {
       e.preventDefault();
+      ui.phangsInfo?.hide();
       ui.about?.toggle();
       return;
     }
-    if (ui.about?.open) return;
+    if (ui.about?.open || ui.phangsInfo?.open) return;
     if (!data.loaded && k !== ' ') return;
     if (/^[0-9]$/.test(k)) {
       const i = k === '0' ? 9 : Number(k) - 1;

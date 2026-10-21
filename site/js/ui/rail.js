@@ -8,11 +8,15 @@ import { PHANGS_SURVEYS, SURVEY_STATUSES, ALMA_ARRAYS, matchesSurvey, matchesPha
 export function initRail(app, mount, ui) {
   const { store, events } = app;
   const filters = () => store.get().phangs?.surveys || {};
+  const toggle = h('input', { type: 'checkbox', 'aria-label': 'Show PHANGS galaxies' });
+  toggle.addEventListener('change', () => app.actions.setOverlay('phangs', toggle.checked));
   const root = h('div', { class: 'survey-rail' });
   const summary = h('span', { class: 'survey-total', text: 'Loading…', role: 'status' });
   const clear = h('button', { class: 'survey-clear', type: 'button', text: 'Clear filters', hidden: true });
   const note = h('p', { class: 'survey-rail-note', text: 'Coverage recorded in v1p6' });
-  root.append(h('div', { class: 'survey-rail-head' }, h('b', { text: 'PHANGS' }), h('span', { text: 'Observations' })), summary);
+  root.append(h('div', { class: 'survey-rail-head' },
+    h('label', { class: 'survey-overlay-toggle' }, h('b', { text: 'PHANGS' }), toggle),
+    h('span', { text: 'Observations' })), summary);
   mount.replaceChildren(root);
   mount.setAttribute('aria-label', 'PHANGS observations');
   const items = new Map();
@@ -85,6 +89,8 @@ export function initRail(app, mount, ui) {
     pop.place();
   }
   function update() {
+    toggle.checked = store.get().overlays.phangs !== false;
+    toggle.disabled = failed;
     const active = PHANGS_SURVEYS.filter(s => filters()[s.id]);
     clear.hidden = !active.length;
     root.classList.toggle('filtered', !!active.length);
@@ -100,7 +106,7 @@ export function initRail(app, mount, ui) {
     }
   }
   events.on('phangs:ready', c => { catalogue = c; failed = !c; update(); });
-  events.on('state', ({ changed }) => { if (changed.includes('phangs')) update(); });
+  events.on('state', ({ changed }) => { if (changed.some(k => ['phangs', 'overlays'].includes(k))) update(); });
   update();
   return { close: () => { let closed = false; for (const i of items.values()) closed = i.pop.close() || closed; return closed; } };
 }

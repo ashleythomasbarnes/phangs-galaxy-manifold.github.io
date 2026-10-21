@@ -1,5 +1,5 @@
-// Preset cartridges (DESIGN.md §13.5): a tray of small rounded cartridges, each a live preview
-// of its canonical view above a 3–4 character code. The active one glows orange; the glow
+// Preset views share one dropdown, each with a live preview and short code.
+// The active one glows orange; the glow
 // fades as the frame drifts away (alignment < 0.99). Any other cartridge whose view the
 // frame happens to match (e.g. after a manual rotation) lights up too.
 
@@ -17,17 +17,14 @@ export function keyForIndex(i) {
 
 export function initPresets(app, mount, ui) {
   const presets = app.config.presets;
-  const tray = h('div', { class: 'carts-tray', role: 'toolbar', 'aria-label': 'Canonical views' });
   const items = new Map();
-  const primary = new Set(['sfms', 'ssfr', 'hi']);
-  const moreLabel = h('span', { text: 'More views' });
-  const more = h('button', { type: 'button', class: 'views-more', 'aria-haspopup': 'dialog' },
-    h('span', { class: 'views-more-label' }, h('small', { text: 'Explore' }), moreLabel), h('span', { class: 'views-chevron', text: '⌄', 'aria-hidden': 'true' }));
+  const more = h('button', { type: 'button', class: 'views-more', 'aria-label': 'Views', 'aria-haspopup': 'dialog' },
+    h('span', { class: 'views-more-label', text: 'Views' }), h('span', { class: 'views-chevron', text: '⌄', 'aria-hidden': 'true' }));
   const menuList = h('div', { class: 'views-list' });
-  const closeButton = h('button', { type: 'button', class: 'views-close', text: 'Close', 'aria-label': 'Close additional views' });
-  const panel = h('section', { id: 'more-views-panel', class: 'control-popover views-panel', role: 'dialog', 'aria-label': 'Additional views' },
-    h('div', { class: 'popover-head' }, h('div', {}, h('span', { class: 'popover-eyebrow', text: 'Galaxy manifold' }), h('h2', { text: 'More views' })), closeButton),
-    h('p', { class: 'popover-sub', text: 'Additional projections of the SDSS reference sample. PHANGS points appear where measurements are available.' }), menuList);
+  const closeButton = h('button', { type: 'button', class: 'views-close', text: 'Close', 'aria-label': 'Close views' });
+  const panel = h('section', { id: 'more-views-panel', class: 'control-popover views-panel', role: 'dialog', 'aria-label': 'Views' },
+    h('div', { class: 'popover-head' }, h('div', {}, h('span', { class: 'popover-eyebrow', text: 'PHANGS Galaxy Manifold' }), h('h2', { text: 'Views' })), closeButton),
+    h('p', { class: 'popover-sub', text: 'Projections of the SDSS reference sample. PHANGS points appear where measurements are available.' }), menuList);
   const pop = createPopover(more, panel);
   closeButton.addEventListener('click', () => pop.close(true));
   more.addEventListener('click', () => {
@@ -51,7 +48,7 @@ export function initPresets(app, mount, ui) {
     const key = keyForIndex(i);
     const screen = h('span', { class: 'cart-screen' });
     const b = h('button', {
-      class: primary.has(p.id) ? 'cart' : 'cart cart-menu',
+      class: 'cart cart-menu',
       type: 'button',
       'data-id': p.id,
       'aria-label': `${p.code} · ${p.name}`,
@@ -60,47 +57,16 @@ export function initPresets(app, mount, ui) {
     }, screen, h('span', { class: 'cart-code', text: p.code }));
     b.addEventListener('click', () => {
       app.actions.applyPreset(p.id);
-      if (!primary.has(p.id)) pop.close(true);
+      pop.close(true);
     });
     const item = { p, b, screen, key, big: null, bigVersion: -1, on: 0 };
     setTip(b, () => ({ node: richTip(item) }), 'bottom');
     b.dataset.tipDelay = '260';
     items.set(p.id, item);
-    if (primary.has(p.id)) tray.append(b);
-    else {
-      b.append(h('span', { class: 'cart-name', text: p.name }), h('span', { class: 'cart-selected', text: '✓', 'aria-hidden': 'true' }));
-      menuList.append(b);
-    }
+    b.append(h('span', { class: 'cart-name', text: p.name }), h('span', { class: 'cart-selected', text: '✓', 'aria-hidden': 'true' }));
+    menuList.append(b);
   });
-  mount.append(tray, more);
-
-  // Touch taps select the cartridge under pointerdown, and the click that follows is dropped.
-  // iOS Safari routes that click to the wrong cartridge (the next one to the right) after the
-  // tray has been scrolled by scrollTo below, while pointer events still hit the right one.
-  // A press held long enough for the tooltip (tooltip.js) selects nothing, as before.
-  let tap = null, dropClickUntil = 0;
-  tray.addEventListener('pointerdown', (e) => {
-    const b = e.pointerType === 'touch' && e.isPrimary && e.target.closest('.cart');
-    tap = b ? { b, x: e.clientX, y: e.clientY, t: performance.now() } : null;
-  });
-  tray.addEventListener('pointermove', (e) => {
-    if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10) tap = null;
-  });
-  tray.addEventListener('pointercancel', () => { tap = null; });
-  tray.addEventListener('pointerup', (e) => {
-    if (!tap || e.pointerType !== 'touch') return;
-    const { b, t } = tap;
-    tap = null;
-    dropClickUntil = performance.now() + 700;
-    if (performance.now() - t < 520) app.actions.applyPreset(b.dataset.id);
-  });
-  tray.addEventListener('click', (e) => {
-    if (performance.now() < dropClickUntil) {
-      dropClickUntil = 0;
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, true);
+  mount.append(more);
 
   // ------------------------------------------------------------------ rich hover card
   let version = 0;   // bumps when previews must be regenerated (filters, context restore)
@@ -191,11 +157,8 @@ export function initPresets(app, mount, ui) {
     const now = performance.now();
     const act = app.store.get().presetId;
     const activePreset = presets.find(p => p.id === act);
-    const secondaryActive = activePreset && !primary.has(act);
-    more.classList.toggle('active', !!secondaryActive);
-    const label = secondaryActive ? activePreset.code : 'More views';
-    if (moreLabel.textContent !== label) moreLabel.textContent = label;
-    more.setAttribute('aria-label', secondaryActive ? `More views, selected: ${activePreset.name}` : 'More views');
+    more.classList.toggle('active', !!activePreset);
+    more.setAttribute('aria-label', activePreset ? `Views, selected: ${activePreset.name}` : 'Views');
     const checkAll = force || now - lastAll > 140;
     if (checkAll) lastAll = now;
     for (const [id, item] of items) {
@@ -215,18 +178,6 @@ export function initPresets(app, mount, ui) {
   }
   app.events.on('render', () => updateActive(false));
   app.events.on('settle', () => updateActive(true));
-
-  // keep the active cartridge in view in a scrolling tray (narrow screens)
-  app.events.on('state', ({ changed, state }) => {
-    if (!changed.includes('presetId') || !state.presetId) return;
-    const item = items.get(state.presetId);
-    if (item && primary.has(item.p.id) && tray.scrollWidth > tray.clientWidth + 2) {
-      // center the cartridge (measured against the tray itself, not the offsetParent)
-      const br = item.b.getBoundingClientRect(), tr = tray.getBoundingClientRect();
-      const left = tray.scrollLeft + (br.left - tr.left) - tr.width / 2 + br.width / 2;
-      tray.scrollTo({ left: Math.max(0, left), behavior: app.motion.reduced() ? 'auto' : 'smooth' });
-    }
-  });
 
   return {
     items,

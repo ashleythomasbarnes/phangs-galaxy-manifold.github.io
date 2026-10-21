@@ -13,6 +13,7 @@ import { initConsole } from './console.js';
 import { initInspector } from './inspector.js?v=2';
 import { initHover } from './hover.js?v=2';
 import { initAbout } from './about.js';
+import { initPhangsInfo } from './phangs-info.js';
 import { initKeys } from './keys.js';
 import { initUrlState } from './urlstate.js?v=2';
 import { closeRadial, radialOpen } from './radial.js';
@@ -48,6 +49,7 @@ export async function initUI(app) {
     }
     closed = ui.rail?.close() || closed;
     closed = ui.header?.presets.close() || closed;
+    closed = ui.header?.search.close() || closed;
     return closed;
   };
 
@@ -67,6 +69,7 @@ export async function initUI(app) {
   ui.inspector = step('inspector', () => initInspector(app, $('inspector'), ui));
   ui.hover = step('hover', () => initHover(app, app.layers.stageUI, ui));
   ui.about = step('about', () => initAbout(app, ui));
+  ui.phangsInfo = step('PHANGS information', () => initPhangsInfo(app, ui));
   ui.keys = step('keys', () => initKeys(app, ui));
   ui.url = step('url', () => initUrlState(app, ui));
 

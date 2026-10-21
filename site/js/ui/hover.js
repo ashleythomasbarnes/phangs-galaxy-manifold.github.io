@@ -7,7 +7,7 @@ import { axisValue } from '../math/frame.js';
 import { sampleColormapHex } from '../gl/colormaps.js';
 import { NEUTRAL } from '../config/style.js';
 import { shortKids, catToken } from './uiconfig.js';
-import { phangsImageUrl } from '../data/phangs.js';
+import { phangsImageUrl } from '../data/phangs.js?v=3';
 import { NEBULA_KEYS, NEBULA_SUMMARIES } from '../data/nebulae.js';
 
 const DWELL = 120;

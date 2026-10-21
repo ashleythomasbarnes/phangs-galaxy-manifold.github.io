@@ -17,7 +17,7 @@ export function createNebulae(app, ov, { hosts, baseValues, project, inspect, se
     app.actions.setOverlay('phangs', true);
     app.actions.applyPreset('mzr2');
   } });
-  const controls = h('details', { class: 'phangs-nebula-controls', open: true },
+  const controls = h('details', { class: 'phangs-nebula-controls', open: true, hidden: true },
     h('summary', { text: 'MUSE nebulae' }),
     h('label', {}, h('span', { text: 'Display' }), display),
     h('label', {}, h('span', { text: 'Summary' }), summary), shortcut,
@@ -196,7 +196,7 @@ export function createNebulae(app, ov, { hosts, baseValues, project, inspect, se
   const number = value => Number.isFinite(value) ? value.toLocaleString('en-US', { maximumSignificantDigits: 4 }) : 'Unavailable';
   function details(row) {
     const host = summaries.get(row.name), region = row.nebula, method = options().summary;
-    const section = h('section', { class: 'phangs-nebula-details' }, h('h4', { text: region ? `MUSE H II region ${region.id}` : 'MUSE nebular properties' }));
+    const section = h('details', { class: 'phangs-nebula-details' }, h('summary', { text: region ? `MUSE H II region ${region.id}` : 'MUSE nebular properties' }));
     if (!host) {
       section.append(h('p', { text: summaryError || (!catalogue ? 'Loading MUSE summaries…' : 'No H II-region measurements in the supplied MUSE catalogue.') }));
       return section;

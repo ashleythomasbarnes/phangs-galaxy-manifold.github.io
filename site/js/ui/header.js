@@ -1,24 +1,26 @@
-// Top bar (DESIGN.md §13.1): starburst glyph + wordmark, a live N badge (galaxies currently
-// in view), the preset cartridge tray, and the ⓘ button.
+// Top bar: PHANGS wordmark, counts, galaxy search, views and data information.
 
 import { h, fmtInt } from './dom.js';
 import { icon, starburstMark } from './icons.js';
 import { setTip } from './tooltip.js';
 import { initPresets } from './presets.js';
+import { initGalaxySearch } from './search.js';
 
 export function initHeader(app, mount, ui) {
   mount.replaceChildren();
   const brand = h('a', {
     class: 'tb-brand',
     href: '#',
-    'aria-label': 'Galaxy Manifold — reset the view',
-    html: `${starburstMark('tb-mark')}<span class="tb-word">GALAXY<span class="tb-word-gap"></span>MANIFOLD</span>`,
+    'aria-label': 'PHANGS Galaxy Manifold, reset the view',
   });
+  brand.append(h('span', { html: starburstMark('tb-mark') }),
+    h('span', { class: 'tb-word' }, h('span', { class: 'tb-word-prefix', text: 'PHANGS' }),
+      h('span', { class: 'tb-word-name', text: 'GALAXY MANIFOLD' })));
   brand.addEventListener('click', (e) => {
     e.preventDefault();
     app.actions.resetView();
   });
-  setTip(brand, { title: 'Galaxy Manifold', sub: 'Reset to the current canonical view' }, 'bottom');
+  setTip(brand, { title: 'PHANGS Galaxy Manifold', sub: 'Reset to the current canonical view' }, 'bottom');
 
   const count = h('b', { text: fmtInt(app.data.n) });
   const badge = h('span', { class: 'tb-badge', role: 'status', 'aria-live': 'off' }, h('i', { text: 'N' }), count);
@@ -28,25 +30,20 @@ export function initHeader(app, mount, ui) {
     meta: `${fmtInt(app.data.n)} in ${app.data.manifest.title || 'the sample'}`,
   }), 'bottom');
 
-  const phangsCount = h('b', { text: '…' });
-  const phangsBadge = h('span', { class: 'tb-badge tb-phangs', role: 'status', 'aria-live': 'off' },
-    h('i', { text: 'N PHANGS' }), phangsCount);
-  let phangs = null;
-  setTip(phangsBadge, () => ({
-    title: phangs ? `${phangs.visible} PHANGS galaxies visible / ${phangs.total} in the table${phangs.regionsVisible ? `; ${fmtInt(phangs.regionsVisible)} H II regions visible` : ''}` : 'Loading PHANGS',
-    meta: 'Independent comparison sample; counts follow observation filters, axes, camera and the overlay toggle.',
-  }), 'bottom');
-  app.events.on('phangs:count', stats => {
-    phangs = stats;
-    phangsCount.textContent = stats.total ? `${stats.visible}/${stats.total}` : '–';
-  });
-
+  const searchMount = h('div', { class: 'tb-search' });
+  const search = initGalaxySearch(app, searchMount, ui);
   const carts = h('div', { class: 'tb-carts' });
-  const about = h('button', { class: 'tb-about ibtn', type: 'button', 'aria-label': 'About, credits and shortcuts', html: icon('info') });
-  setTip(about, { title: 'About', sub: 'Data, literature, shortcuts, caveats', key: '?' }, 'bottom');
-  about.addEventListener('click', () => ui.about?.toggle());
+  const about = h('button', { class: 'tb-about tb-info-button', type: 'button', 'aria-label': 'SDSS information, credits and shortcuts' },
+    h('span', { html: icon('info') }), h('small', { text: 'SDSS' }));
+  const phangsAbout = h('button', { class: 'tb-info-button tb-phangs-info', type: 'button', 'aria-label': 'PHANGS sample information and methods' },
+    h('span', { html: icon('info') }), h('small', { text: 'PHANGS' }));
+  setTip(about, { title: 'SDSS reference sample', sub: 'Data, literature, shortcuts and caveats', key: '?' }, 'bottom');
+  setTip(phangsAbout, { title: 'PHANGS comparison sample', sub: 'Galaxies, survey coverage and measurement sources' }, 'bottom');
+  about.addEventListener('click', () => { ui.closeMenus(); ui.phangsInfo?.hide(); ui.about?.toggle(); });
+  phangsAbout.addEventListener('click', () => { ui.closeMenus(); ui.about?.hide(); ui.phangsInfo?.toggle(); });
 
-  mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge, phangsBadge), carts, about));
+  mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge), searchMount,
+    h('div', { class: 'tb-actions' }, carts, h('div', { class: 'tb-info-buttons' }, phangsAbout, about))));
 
   const presets = initPresets(app, carts, ui);
 
@@ -70,10 +67,10 @@ export function initHeader(app, mount, ui) {
   }
   app.events.on('settle', recount);
 
-  // the wordmark's starburst turns while the grand tour runs
+  // Keep the tour state available to the header styling.
   app.events.on('state', ({ changed, state }) => {
     if (changed.includes('tour')) mount.classList.toggle('touring', !!state.tour.playing);
   });
 
-  return { presets, about, recount };
+  return { presets, about, phangsAbout, search, recount };
 }

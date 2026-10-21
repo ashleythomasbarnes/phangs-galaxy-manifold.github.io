@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { projectPhangs, createPhangs } from '../js/view/overlays/phangs.js';
+import { projectPhangs, createPhangs, hasPhangsSizeAxes } from '../js/view/overlays/phangs.js';
 import { Store } from '../js/state.js';
 import { Emitter } from '../js/events.js';
 import { Dataset } from '../js/data/loader.js';
@@ -10,6 +10,7 @@ import { Camera } from '../js/view/camera.js';
 import { phangsImageField, phangsImageUrl, phangsValues } from '../js/data/phangs.js';
 import { PHANGS_SURVEYS, almaArray, surveyStatus, matchesSurvey, normalizeSurveyFilters, matchesPhangsSurveys } from '../js/data/surveys.js';
 import { basisFrame, frameFromCombos } from '../js/math/frame.js';
+import { initRail } from '../js/ui/rail.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/manifest.json', import.meta.url)));
 const phangs = JSON.parse(readFileSync(new URL('../data_phangs/phangs.json', import.meta.url)));
@@ -19,7 +20,7 @@ const frame = (x, y) => frameFromCombos(x, y, dims).F;
 test('PHANGS export contains all entries and only supported axes', () => {
   assert.equal(phangs.galaxies.length, 118);
   assert.equal(new Set(phangs.galaxies.map(r => r.name)).size, 118);
-  for (const r of phangs.galaxies) assert.deepEqual(Object.keys(r.values).sort(), ['logM', 'logSFR', 'logSigma', 'logfHI', 'logsSFR']);
+  for (const r of phangs.galaxies) assert.deepEqual(Object.keys(r.values).sort(), ['logM', 'logSFR', 'logSigma', 'logfHI', 'logsSFR', 'z']);
 });
 
 test('PHANGS aligns with SDSS projection, within SDSS quantization precision', () => {
@@ -75,7 +76,7 @@ function overlayFixture(t, response = phangs) {
     matches() { return false; }
   }
   const oldDocument = globalThis.document, oldNode = globalThis.Node;
-  globalThis.document = { createElement: () => new Element(), createTextNode: text => ({ text }) };
+  globalThis.document = { createElement: tag => Object.assign(new Element(), { tagName: tag.toUpperCase() }), createTextNode: text => ({ text }) };
   globalThis.Node = Element;
   t.after(() => { globalThis.document = oldDocument; globalThis.Node = oldNode; });
   t.mock.method(globalThis, 'fetch', async () => response ? { ok: true, json: async () => response } : { ok: false, status: 404 });
@@ -90,16 +91,67 @@ function overlayFixture(t, response = phangs) {
   }
   data.value = () => 10;
   let cpVisible = 1;
+  const clickHandlers = [];
   const app = { data, frame: frame({ logM: 1 }, { logSFR: 1 }), events: new Emitter(),
     store: { get: () => state, set: patch => { Object.assign(state, patch); app.events.emit('state', { changed: Object.keys(patch) }); } }, layers: { stage: new Element() },
     camera: { width: 1200, toScreen: () => [200, 200] }, isMoving: () => false,
-    interaction: { clearHover() {} }, filterParams: () => ({}),
+    interaction: { clearHover() {}, addClickHandler(fn, priority = 0) { clickHandlers.push({ fn, priority }); } }, filterParams: () => ({}),
     proj: { projectSample: () => ({ X: [1], Y: [2], vis: [cpVisible] }) },
     actions: { inspect: index => app.events.emit('inspect', { index }),
       setOverlay: (key, value) => { state.overlays[key] = value; app.events.emit('state', { changed: ['overlays'] }); } } };
   const ov = { layer: new Element(), invalidate() {}, plotRect: () => ({ l: 0, r: 1200, t: 0, b: 900 }) };
-  return { app, ov, selection, setVisible(v) { cpVisible = v; } };
+  return { app, ov, selection, setVisible(v) { cpVisible = v; },
+    click(point) { return clickHandlers.sort((a, b) => b.priority - a.priority).some(h => h.fn(point)); } };
 }
+
+test('DSS tiles load only on request for visible hosts, restore markers and preserve selection', async t => {
+  const f = overlayFixture(t), api = createPhangs(f.app, f.ov);
+  await api.ready;
+  api.draw();
+  const markers = f.ov.layer.children[0].children.slice(1);
+  assert.ok(markers.every(b => b.children.every(c => c.tagName !== 'IMG')));
+  f.app.isMoving = () => true;
+  f.app.store.set({ phangs: { images: true } });
+  api.draw();
+  assert.ok(markers.every(b => b.children.every(c => c.tagName !== 'IMG')));
+  f.app.isMoving = () => false;
+  api.draw();
+  const button = markers.find(b => !b.hidden);
+  const img = button.children.find(c => c.tagName === 'IMG');
+  assert.ok(img);
+  assert.equal(new URL(img.src).searchParams.get('hips'), 'CDS/P/DSS2/color');
+  assert.equal(new URL(img.src).searchParams.get('width'), '96');
+  img.onload(); api.draw();
+  assert.equal(button.class, 'phangs-marker phangs-image');
+  assert.equal(img.hidden, false);
+  assert.ok(f.click({ sx: 200, sy: 200 }));
+  assert.ok(api.selected);
+  f.app.store.set({ phangs: { images: false } }); api.draw();
+  assert.equal(button.class, 'phangs-marker');
+  assert.equal(img.hidden, true);
+  assert.equal(f.app.store.get().selection, f.selection);
+  assert.equal(f.app.data.n, manifest.n);
+  f.app.store.set({ phangs: { images: true, surveys: { alma: { status: 'observed', array: 'full' } } } });
+  api.draw();
+  for (let i = 0; i < markers.length; i++) if (!matchesPhangsSurveys(phangs.galaxies[i], f.app.store.get().phangs.surveys)) assert.equal(markers[i].hidden, true);
+});
+
+test('DSS image errors keep a clickable marker and hosts can disable external images', async t => {
+  const f = overlayFixture(t), api = createPhangs(f.app, f.ov);
+  await api.ready;
+  f.app.store.set({ phangs: { images: true } }); api.draw();
+  const markers = f.ov.layer.children[0].children.slice(1);
+  const button = markers.find(b => !b.hidden), img = button.children.find(c => c.tagName === 'IMG');
+  img.onerror(); api.draw();
+  assert.equal(button.class, 'phangs-marker');
+  assert.equal(img.hidden, true);
+  assert.match(button['aria-label'], /DSS image unavailable/);
+  f.app.data.manifest.host = { externalImages: false };
+  api.draw();
+  assert.ok(markers.every(b => b.class === 'phangs-marker'));
+  // Restore shared manifest fixture after the hosting-policy check.
+  delete f.app.data.manifest.host;
+});
 
 test('inspection, filters and toggling never modify SDSS rows or lasso selection', async t => {
   const f = overlayFixture(t), api = createPhangs(f.app, f.ov);
@@ -123,9 +175,8 @@ test('inspection, filters and toggling never modify SDSS rows or lasso selection
   assert.equal(markers.children[0].hidden, true);
   assert.equal(f.app.data.n, manifest.n);
   assert.equal(f.app.store.get().selection, f.selection);
-  const toggle = controls.children[0].children[0];
-  toggle.checked = false;
-  toggle.handlers.change();
+  assert.equal(controls.hidden, true);
+  f.app.actions.setOverlay('phangs', false);
   api.draw();
   assert.equal(api.selected, null);
   assert.equal(counts.visible, 0);
@@ -140,8 +191,8 @@ test('missing PHANGS file remains local to the overlay', async t => {
   assert.equal(await api.ready, null);
   assert.doesNotThrow(() => api.draw());
   const controls = f.ov.layer.children[1];
-  assert.equal(controls.children[0].children[0].disabled, true);
-  assert.match(controls.children[2].textContent, /PHANGS unavailable/);
+  assert.equal(controls.hidden, true);
+  assert.match(controls.children[1].textContent, /PHANGS unavailable/);
   assert.equal(f.app.data.n, manifest.n);
   assert.equal(f.app.store.get().selection, f.selection);
 });
@@ -152,14 +203,16 @@ test('size comparison changes are explicit and notify the inspector', async t =>
   let mode;
   f.app.events.on('phangs:size', event => { mode = event.mode; });
   const controls = f.ov.layer.children[1];
-  const select = controls.children[3].children[1];
+  f.app.frame = frame({ logM: 1 }, { logR50: 1 });
+  const sizeControls = controls.children[2];
+  const select = sizeControls.children[0].children[1];
   assert.equal(api.sizeMode, 'none');
   select.value = 'ned-exponential';
   select.handlers.change();
   api.draw();
   assert.equal(api.sizeMode, 'ned-exponential');
   assert.equal(mode, 'ned-exponential');
-  assert.equal(controls.children[4].hidden, false);
+  assert.equal(sizeControls.children[1].hidden, false);
   assert.equal(f.app.store.get().selection, f.selection);
   assert.equal(f.app.data.n, manifest.n);
 });
@@ -259,8 +312,68 @@ test('survey filters hide only PHANGS markers and close an excluded inspected ga
   api.draw();
   assert.equal(counts.matching, 0);
   assert.equal(counts.visible, 0);
-  assert.match(f.ov.layer.children[1].children[2].textContent, /No PHANGS galaxies match/);
+  assert.match(f.ov.layer.children[1].children[1].textContent, /No PHANGS galaxies match/);
   f.app.store.set({ phangs: { surveys: {} } });
   api.draw();
   assert.equal(counts.matching, 118);
+});
+
+test('size controls follow the actual frame, including mixed projections and numerical noise', () => {
+  assert.equal(hasPhangsSizeAxes(dims, frame({ logM: 1 }, { logSFR: 1 })), false);
+  assert.equal(hasPhangsSizeAxes(dims, frame({ logSigma: 1 }, { logsSFR: 1 })), true);
+  assert.equal(hasPhangsSizeAxes(dims, frame({ logM: 1 }, { logR50: 1 })), true);
+  assert.equal(hasPhangsSizeAxes(dims, frame({ logM: 1, logR50: .2 }, { logSFR: 1 })), true);
+  const F = frame({ logM: 1 }, { logSFR: 1 }), i = dims.findIndex(d => d.key === 'logR50');
+  F[i] = 1e-9;
+  assert.equal(hasPhangsSizeAxes(dims, F), false);
+  F[D + i] = .01;
+  assert.equal(hasPhangsSizeAxes(dims, F), true);
+});
+
+test('public PHANGS inspection opens the existing galaxy inspector', async t => {
+  const f = overlayFixture(t), api = createPhangs(f.app, f.ov);
+  await api.ready;
+  let inspected;
+  f.app.events.on('phangs:inspect', event => { inspected = event.row; });
+  const row = api.catalogue.galaxies.find(r => r.name === 'ngc0628');
+  api.inspect(row);
+  assert.equal(api.selected, row.name);
+  assert.equal(inspected, row);
+  assert.equal(f.app.store.get().selection, f.selection);
+});
+
+test('observation rail owns the overlay toggle and keeps observation selections', t => {
+  class Element {
+    constructor() { this.children = []; this.handlers = {}; this.dataset = {}; this.style = { setProperty() {} }; this.classList = { toggle() {} }; }
+    setAttribute(k, v) { this[k] = v; }
+    append(...nodes) { this.children.push(...nodes); }
+    replaceChildren(...nodes) { this.children = nodes; }
+    addEventListener(k, fn) { this.handlers[k] = fn; }
+  }
+  const globals = { document: globalThis.document, window: globalThis.window, Node: globalThis.Node };
+  const floating = new Element();
+  globalThis.document = { createElement: () => new Element(), createTextNode: text => ({ textContent: text }),
+    getElementById: () => floating, addEventListener() {} };
+  globalThis.window = { addEventListener() {} };
+  globalThis.Node = Element;
+  t.after(() => Object.assign(globalThis, globals));
+  const store = new Store({ overlays: { phangs: false }, phangs: { surveys: { muse: { status: 'observed' } } } });
+  const events = new Emitter();
+  store.subscribe((state, changed) => events.emit('state', { state, changed }));
+  const mount = new Element();
+  initRail({ store, events, actions: { setOverlay: (name, value) => store.set({ overlays: { [name]: value } }) } }, mount, { closeMenus() {} });
+  const root = mount.children[0], toggle = root.children[0].children[0].children[1];
+  assert.equal(toggle['aria-label'], 'Show PHANGS galaxies');
+  assert.equal(toggle.checked, false);
+  events.emit('phangs:ready', phangs);
+  assert.equal(toggle.disabled, false);
+  toggle.checked = true;
+  toggle.handlers.change();
+  assert.equal(store.get().overlays.phangs, true);
+  assert.equal(store.get().phangs.surveys.muse.status, 'observed');
+  assert.equal(root.children[1].textContent, '19 / 118 selected');
+  store.set({ overlays: { phangs: false } });
+  assert.equal(toggle.checked, false);
+  events.emit('phangs:ready', null);
+  assert.equal(toggle.disabled, true);
 });

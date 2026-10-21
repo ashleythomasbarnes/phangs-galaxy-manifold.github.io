@@ -1,4 +1,4 @@
-# Galaxy Manifold — core API (as implemented)
+# PHANGS Galaxy Manifold — core API (as implemented)
 
 PHANGS is an independent comparison overlay (`app.overlays.phangs`). Its `ready`
 promise resolves to the exported catalogue or null; `selected` is a PHANGS name
@@ -17,7 +17,24 @@ a referenced NED r-band exponential half-light radius onto `logR50` for comparis
 it does not modify `row.values` or any SDSS data. `phangs:size` announces size changes;
 `phangs:measurements` refreshes inspector bars after size, summary or catalogue changes.
 `phangs:count` reports `{visible,total,matching,supported,enabled,regionsVisible}`
-for the header. Shared view links store the mode as `phs=ned-exponential`.
+for overlay consumers. Shared view links store the mode as `phs=ned-exponential`.
+`store.phangs.images` (default false) replaces visible summary markers with 48px
+DSS tiles, requested lazily after camera motion settles. Links encode this as
+`phi=1`. Failed requests retain the marker, and hosts that disable external images
+also disable this toggle. Image picking passes through the stage interaction so
+pan, zoom and lasso still work across tiles; SDSS Glow/Mosaic stays independent.
+
+The observations rail owns the PHANGS visibility toggle. Plot controls are
+contextual: size controls require `logR50` or `logSigma`, MUSE controls require
+one of its four shared nebular dimensions. Neither panel appears on global-only
+views or while PHANGS is off. `phangs.inspect(row)` opens a PHANGS galaxy from
+the header search; it preserves SDSS selections.
+`ui.header.search.close()` participates in `ui.closeMenus()`. The PHANGS
+information dialog and the SDSS reference-data dialog are mutually exclusive.
+All presets share the header Views menu. PHANGS inspectors display source morphology
+and observed survey chips, with lower measurement/provenance sections initially collapsed.
+The export includes signed `values.z = orient_vlsr / 299792.458` and LSR-frame
+provenance; this low-velocity approximation is labelled `z†` in the inspector.
 
 MUSE uses `store.phangs.nebulaDisplay` (`summary`, `regions`, `both`; default
 `summary`) and `nebulaSummary` (`mean`, `median`, `summed`; default `mean`). Links

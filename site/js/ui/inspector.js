@@ -14,7 +14,8 @@ import { groupedDims, dimTitle, chipFor, catToken, GROUP_NAMES, shortKids } from
 import { kpcPerArcsec } from '../math/cosmo.js';
 import { CATEGORY_COLORS, NEUTRAL } from '../config/style.js';
 import { FADE_WIDTH } from '../math/frame.js';
-import { phangsImageField, phangsImageUrl, cutoutImageUrl, IMAGE_LAYERS } from '../data/phangs.js';
+import { phangsImageField, phangsImageUrl, cutoutImageUrl, IMAGE_LAYERS } from '../data/phangs.js?v=3';
+import { buildPhangsChips } from './phangs-chips.js';
 
 const IMG_PX = 256, PIXSCALE = 0.262;
 const LS = 'https://www.legacysurvey.org/viewer';
@@ -329,16 +330,17 @@ export function initInspector(app, mount, ui) {
       const my = ++token;
       frame.classList.add('loading');
       frame.classList.remove('failed', 'ready');
+      status.innerHTML = icon('image');
       img.onload = () => {
         if (my !== token) return;
-        if (phangs && imageBlank(img)) {
+        if (which === 'ls-dr9' && auto && imageBlank(img)) {
+          load('sdss', false);
+          return;
+        }
+        if (imageBlank(img)) {
           frame.classList.remove('loading', 'ready');
           frame.classList.add('failed');
           status.textContent = `No ${label} image available`;
-          return;
-        }
-        if (which === 'ls-dr9' && auto && imageBlank(img)) {
-          load('sdss', false);
           return;
         }
         frame.classList.remove('loading');
@@ -352,8 +354,7 @@ export function initInspector(app, mount, ui) {
         }
         frame.classList.remove('loading');
         frame.classList.add('failed');
-        if (phangs) status.textContent = `No ${label} image available`;
-        else status.innerHTML = icon('broken');
+        status.textContent = `No ${label} image available`;
       };
       img.src = phangs ? phangsImageUrl(phangs, IMG_PX, which) : cutoutImageUrl(m.ra, m.dec, field, IMG_PX, which);
     }
@@ -389,13 +390,14 @@ export function initInspector(app, mount, ui) {
         const ok = Number.isFinite(x) && Number.isFinite(p);
         const proxy = sizeProxy && d.key === 'logR50';
         const r90Density = values && d.key === 'logSigma';
+        const lsrRedshift = values && d.key === 'z';
         const row = h('div', { class: `strip${ok ? '' : ' nil'}` },
-          h('span', { class: 'strip-k' }, shortKids(proxy ? 'Rₑ†' : r90Density ? 'Σ★₉₀' : d.short)),
+          h('span', { class: 'strip-k' }, shortKids(proxy ? 'Rₑ†' : r90Density ? 'Σ★₉₀' : lsrRedshift ? 'z†' : d.short)),
           h('span', { class: 'strip-track' }, h('i', { class: 'strip-mid' }), ok ? h('i', { class: 'strip-dot', style: { left: `${clamp(p, 0, 100)}%` } }) : null),
           h('span', { class: 'strip-v', text: ok ? config.dims.format(d.key, x) : '–' }));
         setTip(row, {
-          title: proxy ? 'NED r-band exponential effective radius (Rₑ†)' : r90Density ? 'PHANGS log Σ★ = log₁₀[M★/(π R90²)] (M☉ kpc⁻²)' : dimTitle(d),
-          meta: ok ? `${config.dims.format(d.key, x, { unit: true, spec: d })} · ${ord(p)} percentile${values ? ' of SDSS values; PHANGS measurement' : ''}` : 'not measured for this galaxy',
+          title: proxy ? 'NED r-band exponential effective radius (Rₑ†)' : r90Density ? 'PHANGS log Σ★ = log₁₀[M★/(π R90²)] (M☉ kpc⁻²)' : lsrRedshift ? 'Approximate LSR redshift: z ≈ vLSR/c' : dimTitle(d),
+          meta: (ok ? `${config.dims.format(d.key, x, { unit: true, spec: d })} · ${ord(p)} percentile${values ? ' of SDSS values; PHANGS measurement' : ''}` : 'not measured for this galaxy') + (lsrRedshift ? '. Derived from the catalogue systemic velocity; LSR frame differs from SDSS spectroscopic redshift.' : ''),
         }, 'left');
         blk.append(row);
       }
@@ -704,7 +706,7 @@ export function initInspector(app, mount, ui) {
     return region + (app.overlays.phangs.sizeMode === 'ned-exponential'
       ? 'Rₑ† is the NED r-band exponential semi-major radius, compared on the SDSS Petrosian R₅₀ axis. Bars show SDSS percentiles.'
       : 'PHANGS measurements; bars show percentiles relative to SDSS.') +
-      ' PHANGS Σ★ uses total M★/(π R90²), a circular area; SDSS uses M★/(2π R₅₀²).';
+      ' PHANGS Σ★ uses total M★/(π R90²), a circular area; SDSS uses M★/(2π R₅₀²). z† ≈ vLSR/c uses the catalogue systemic velocity in the LSR frame.';
   }
   app.events.on('phangs:measurements', () => {
     if (view !== 'phangs' || !inspectedPhangs) return;
@@ -727,7 +729,7 @@ export function initInspector(app, mount, ui) {
       linkBtn('sphere', 'SkyServer explorer', `https://skyserver.sdss.org/dr17/VisualTools/explore/summary?ra=${row.ra}&dec=${row.dec}`),
       linkBtn('viewer', 'Legacy Survey viewer', `${LS}?ra=${row.ra}&dec=${row.dec}&layer=sdss&zoom=12&mark=${row.ra},${row.dec}`));
     const im = buildImage(null, row);
-    body.replaceChildren(im.frame, h('p', { class: 'phangs-strip-note', text: phangsStripNote() }),
+    body.replaceChildren(im.frame, buildPhangsChips(row), h('p', { class: 'phangs-strip-note', text: phangsStripNote() }),
       galaxyStrips(null, app.overlays.phangs.values(row), app.overlays.phangs.sizeMode === 'ned-exponential'), details);
     body.scrollTop = 0;
     setOpen(true);

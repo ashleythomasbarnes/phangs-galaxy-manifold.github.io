@@ -1,22 +1,27 @@
-# Galaxy Manifold
+# PHANGS Galaxy Manifold
 
 Conceptualized by [John Wu](https://jwuphysics.github.io) and implemented by Claude Opus 5.5.
 
-Galaxy Manifold is a website for exploring galaxy scaling relations. It shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 22 measured properties, e.g., stellar mass. The screen shows a two-dimensional linear projection of that space.
+PHANGS Galaxy Manifold is a website for exploring nearby PHANGS galaxies alongside galaxy scaling relations. The reference background shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 22 measured properties, e.g., stellar mass. The screen shows a two-dimensional linear projection of that space.
 
 You can rotate the projection by hand, let it rotate on its own, or jump to a known view such as the mass-metallicity relation. Each jump is an animated rotation through the full space, so you can watch one relation turn into another.
 
 ## What you can do
 
 - Open a PHANGS observation chip on the left to filter by survey, observation status or ALMA array configuration. Selections across surveys must all match.
+- Toggle PHANGS points at the top of the observations rail. Size and MUSE controls appear in the plot only when their axes contribute to the view.
+- Use the PHANGS image button beside Glow/Mosaic to replace galaxy markers with DSS tiles. Tiles follow the observation filters and plotted positions; click one to inspect it. The choice is included in shared links.
+- Search PHANGS names or aliases in the header, then select a result to inspect it. Filtered galaxies and unavailable axis measurements are identified in the results.
+- Open the labelled PHANGS information button for sample definitions and sources, or SDSS for the reference data, credits and shortcuts.
 - Press Space to start or pause a slow random rotation.
-- Click SFMS, sSFR or H I at the top, or open **More views** for the other projections. There are 14 views, including the mass-metallicity relation (MZR), the fundamental metallicity relation (FMR), the star-forming main sequence, the mass-size relation, the edge-on fundamental plane, the BPT diagram, and the stellar-to-halo mass relation.
+- Open **Views** for all projections. There are 14 views, including the mass-metallicity relation (MZR), the fundamental metallicity relation (FMR), the star-forming main sequence, the mass-size relation, the edge-on fundamental plane, the BPT diagram, and the stellar-to-halo mass relation.
 - Color the points by a third property or by a class. The classes are BPT class, central or satellite from the group catalog, and Galaxy Zoo morphology. The brightness of the plot shows how many galaxies are in each place, and the color shows their average value.
 - Turn on the running medians. With a color property set, the page draws one median line for each quarter of that property.
 - Turn on the literature relations. Each one appears only when the axes match its own axes.
 - Draw a lasso around a group of galaxies. The group stays highlighted when you rotate or change views.
 - Switch to mosaic mode. The plot is then covered with galaxy images, and each cell shows the most typical galaxy in that cell.
 - Click a galaxy to see its image and where it falls in every property.
+- PHANGS inspection includes morphology and recorded observation chips, expandable measurements, and DSS, DESI, SDSS, DR9, 2MASS, GALEX, AllWISE and XMM image layers. Coverage varies. PHANGS redshift is the signed approximation z ≈ vLSR/c from the catalogue systemic velocity, not a heliocentric SDSS redshift.
 - Press the tighten button in the bottom bar to search for the x axis that gives the least scatter in y. Starting from the MZR on the PP04 metallicity scale, it finds an x axis of about log M★ − 0.52 log SFR.
 
 ## Data
@@ -55,8 +60,9 @@ as SDSS, defaulting to [DSS2 colour cutouts via CDS](https://alasky.cds.unistra.
 The inspector also offers SDSS and DESI Legacy Imaging Surveys DR10/DR9 through
 the [Legacy Survey viewer](https://www.legacysurvey.org/svtips/), with unavailable coverage labelled.
 PHANGS property bars show percentiles relative to the SDSS background.
-The header also reports the visible PHANGS count, and its comparison controls sit
-at the upper right of the uncovered plot area.
+The header reports the visible PHANGS count. The on/off toggle is above the
+observation chips. Size and MUSE comparison controls appear at the upper right
+of the uncovered plot area only when their axes contribute to the view.
 The inspector lists R90, R25, stellar effective radius and stellar scale length with
 their supplied angular uncertainties and physical radii at the PHANGS distance.
 Physical-size uncertainties combine angular and distance errors, assuming independence.

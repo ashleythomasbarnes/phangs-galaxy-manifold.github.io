@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "site/data_phangs/phangs_sample_table_v1p6.fits"
 SDSS = ROOT / "site/data"
 RADIUS = 10.0
+C_KM_S = 299792.458
 FIELDS = ("props_mstar", "props_sfr", "props_mhi", "dist")
 SIZE_FIELDS = ("size_r90", "size_r25", "size_reff", "size_scalelength")
 
@@ -50,11 +51,15 @@ def properties(row):
     # Total stellar mass divided by a circular R90 area, with no enclosed-mass
     # fraction or inclination correction. Distinct from SDSS Mstar/(2*pi*R50^2).
     log_sigma = logs["logM"] - math.log10(math.pi * r90_kpc ** 2) if logs["logM"] is not None and r90_kpc else None
+    # The catalogue velocity is in the LSR frame. Preserve approaching galaxies
+    # and zero: this is a signed low-velocity z approximation, not a distance.
+    vlsr = clean(row["orient_vlsr"])
     return {"logM": logs["logM"], "logSFR": logs["logSFR"], "logSigma": log_sigma,
             "logsSFR": logs["logSFR"] - logs["logM"]
             if logs["logSFR"] is not None and logs["logM"] is not None else None,
             "logfHI": logs["logHI"] - logs["logM"]
-            if logs["logHI"] is not None and logs["logM"] is not None else None}
+            if logs["logHI"] is not None and logs["logM"] is not None else None,
+            "z": vlsr / C_KM_S if vlsr is not None else None}
 
 
 def sizes(row):
@@ -126,8 +131,8 @@ def build_catalogue():
     meta = {k: np.frombuffer(gzip.decompress((SDSS / f"meta/{k}.f32.gz").read_bytes()),
                              dtype="<f4").astype(float) for k in ("ra", "dec")}
     assert len(meta["ra"]) == len(meta["dec"]) == manifest["n"]
-    keep = [k for k in table.colnames if k in ("name", "alias", "pgc", "orient_ra", "orient_dec", "orient_ra_unc", "orient_dec_unc", "orient_pos_ref", "size_r25")
-            or k.startswith(("survey_", "props_", "dist", "size_"))]
+    keep = [k for k in table.colnames if k in ("name", "alias", "pgc")
+            or k.startswith(("survey_", "props_", "dist", "size_", "orient_", "morph_", "agn_"))]
     ned_path = SOURCE.with_name("ned_sizes.json")
     ned = json.loads(ned_path.read_text()) if ned_path.exists() else None
     rows = []
@@ -152,13 +157,23 @@ def build_catalogue():
            "match_radius_arcsec": RADIUS, "match_counts": counts,
            "ned_summary": ned["summary"] if ned else None,
            "units": {k: str(table[k].unit) if table[k].unit else None for k in keep},
+           "redshift": {"key": "z", "source_field": "orient_vlsr", "velocity_frame": "LSR",
+                        "velocity_unit": "km/s", "speed_of_light_km_s": C_KM_S,
+                        "formula": "orient_vlsr / 299792.458",
+                        "label": "Approximate redshift from LSR velocity",
+                        "n_valid": sum(r["values"]["z"] is not None for r in rows),
+                        "note": "Signed low-velocity approximation z = v_LSR/c. No LSR-to-heliocentric "
+                                "frame correction; not equivalent to the SDSS spectroscopic redshift."},
            "notes": "All table entries, including possible targets. Survey statuses refer to v1p6. "
                     "PHANGS WISE/GALEX and SDSS MPA-JHU estimates use different methods; "
                     "no calibration offsets applied. Distance uncertainty is in dex. "
                     "PHANGS logSigma = log10(Mstar / (pi R90^2)) in Msun/kpc^2, using size_r90 "
                     "and dist, total stellar mass, a circular area and no inclination correction. "
                     "This differs from SDSS Mstar/(2 pi R50^2). R90 uncertainties are unavailable; "
-                    "no surface-density uncertainty is estimated.",
+                    "no surface-density uncertainty is estimated. "
+                    "z is the signed low-velocity approximation orient_vlsr / 299792.458 from the "
+                    "catalogue LSR velocity, not a heliocentric SDSS-equivalent redshift. "
+                    "Orientation, morphology and AGN fields retain their source values and masks.",
            "galaxies": rows}
     return out
 

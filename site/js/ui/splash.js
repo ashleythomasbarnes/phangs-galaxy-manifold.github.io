@@ -1,5 +1,5 @@
-// Splash (DESIGN.md §13.8): the wordmark plus an animated starburst, two orbits and a thin
-// progress arc — no other text. The markup lives in index.html so it shows before any script;
+// Splash: the PHANGS wordmark, original starburst and a thin progress arc.
+// The markup lives in index.html so it shows before any script;
 // this module drives the arc from `load:progress` and stills the animation under reduced motion.
 
 import { reducedMotion } from './dom.js';

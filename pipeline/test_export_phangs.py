@@ -15,14 +15,24 @@ class ExportTests(unittest.TestCase):
         for x in (None, np.ma.masked, np.nan, np.inf, 0, -1):
             self.assertIsNone(ep.positive(x))
         row = {"props_mstar": 1e10, "props_sfr": 1, "props_mhi": np.ma.masked,
-               "size_r90": np.ma.masked, "dist": 10.}
-        self.assertEqual(ep.properties(row), {"logM": 10, "logSFR": 0, "logsSFR": -10, "logfHI": None, "logSigma": None})
+               "size_r90": np.ma.masked, "dist": 10., "orient_vlsr": np.ma.masked}
+        self.assertEqual(ep.properties(row), {"logM": 10, "logSFR": 0, "logsSFR": -10, "logfHI": None, "logSigma": None, "z": None})
+
+    def test_signed_lsr_redshift_and_missing_velocity(self):
+        row = {"props_mstar": 1e10, "props_sfr": 1, "props_mhi": 1e9,
+               "size_r90": 20., "dist": 10.}
+        for velocity in (None, np.ma.masked, np.nan, np.inf, -np.inf):
+            with self.subTest(velocity=velocity):
+                self.assertIsNone(ep.properties({**row, "orient_vlsr": velocity})["z"])
+        for velocity in (-340., 0., 1000.):
+            with self.subTest(velocity=velocity):
+                self.assertEqual(ep.properties({**row, "orient_vlsr": velocity})["z"], velocity / 299792.458)
 
     def test_circular_r90_surface_density(self):
         # This angle at 10 Mpc is a 1 kpc radius. The full mass, not 0.9 M,
         # must be divided by pi R^2 (not the half-light 2 pi R^2).
         row = {"props_mstar": math.pi * 1e8, "props_sfr": 1, "props_mhi": 1e8,
-               "size_r90": 648000 / (math.pi * 10000), "dist": 10.}
+               "size_r90": 648000 / (math.pi * 10000), "dist": 10., "orient_vlsr": 1000.}
         self.assertAlmostEqual(ep.properties(row)["logSigma"], 8.)
         row["dist"] = 20.
         self.assertAlmostEqual(ep.properties(row)["logSigma"], 8. - math.log10(4))
@@ -88,13 +98,21 @@ class ExportTests(unittest.TestCase):
         self.assertIsNone(ep.ned_exponential_size(record, None, None))
 
     def test_real_export_and_determinism(self):
-        saved = json.loads(ep.SOURCE.with_name("phangs.json").read_text())
-        self.assertEqual(saved, ep.build_catalogue())
+        saved_text = ep.SOURCE.with_name("phangs.json").read_text()
+        saved = json.loads(saved_text)
+        built = ep.build_catalogue()
+        self.assertEqual(saved, built)
+        self.assertEqual(saved_text, json.dumps(built, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\n")
         rows = saved["galaxies"]
         self.assertEqual(len({r["name"] for r in rows}), 118)
         table = Table.read(ep.SOURCE)
+        preserved = [k for k in table.colnames if k.startswith(("orient_", "morph_", "agn_"))]
         for src, row in zip(table, rows):
             self.assertEqual(row["ra"], float(src["orient_ra"]))
+            for field in preserved:
+                self.assertEqual(row["source"][field], ep.clean(src[field]))
+                self.assertIn(field, saved["units"])
+            self.assertEqual(row["values"]["z"], float(src["orient_vlsr"]) / 299792.458)
             for key, field in (("logM", "props_mstar"), ("logSFR", "props_sfr")):
                 value = src[field]
                 if np.ma.is_masked(value) or not np.isfinite(value) or value <= 0:
@@ -109,7 +127,15 @@ class ExportTests(unittest.TestCase):
                 self.assertAlmostEqual(10 ** sigma, row["source"]["props_mstar"] / (math.pi * radius ** 2), places=5)
         self.assertEqual(sum(saved["match_counts"].values()), 118)
         self.assertEqual(sum(r["values"]["logSigma"] is not None for r in rows), 112)
-        self.assertTrue(all(set(r["values"]) == {"logM", "logSFR", "logsSFR", "logfHI", "logSigma"} for r in rows))
+        self.assertTrue(all(set(r["values"]) == {"logM", "logSFR", "logsSFR", "logfHI", "logSigma", "z"} for r in rows))
+        self.assertEqual(sum(r["values"]["z"] is not None for r in rows), 118)
+        self.assertEqual(sum(r["values"]["z"] < 0 for r in rows), 5)
+        self.assertEqual(saved["redshift"]["n_valid"], 118)
+        self.assertEqual(saved["redshift"]["velocity_frame"], "LSR")
+        self.assertEqual(saved["redshift"]["source_field"], "orient_vlsr")
+        self.assertEqual(saved["units"]["orient_vlsr"], "km / s")
+        self.assertIn("low-velocity", saved["redshift"]["note"])
+        self.assertIn("not a heliocentric", saved["notes"])
 
 
 if __name__ == "__main__":

@@ -561,7 +561,7 @@ def quicklook() -> None:
     ax.axvline(8.5, color=MUSTARD, lw=1.0, ls="--", label="log Σ★ = 8.5 (K03)")
     ax.legend(loc="lower left")
 
-    fig.suptitle(f"Galaxy Manifold export quicklook · N {len(g):,} · log counts",
+    fig.suptitle(f"PHANGS Galaxy Manifold export quicklook · N {len(g):,} · log counts",
                  x=0.01, ha="left", color=CREAM, fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.975])
     fig.savefig(C.QUICKLOOK_PNG, dpi=100)
