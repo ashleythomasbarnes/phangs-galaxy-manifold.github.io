@@ -10,13 +10,14 @@
 //   phnd MUSE display ('regions'|'both'; omitted = 'summary')
 //   phnm MUSE summary ('median'|'summed'; omitted = 'mean')
 //   phi  PHANGS DSS image tiles ('1'; omitted = marker circles)
-//   phv table presentation · phts/phtd column sort · phcf JSON column filters
+//   phv table/plot · phg property group · phcols visible columns · phq name/alias filter
+//   phts/phtd column sort · phcf JSON column filters
 // Restored during initUI (before the columns load, so the first paint is the linked view);
 // written with a debounced history.replaceState on every change.
 
 import { debounce } from './dom.js';
 import { normalizeSurveyFilters } from '../data/surveys.js?v=2';
-import { tableLinkState, normalizeColumnFilters, normalizeTableSort } from '../data/phangs-table.js';
+import { tableLinkState, normalizeColumnFilters, normalizeTableSort, normalizeTablePreset, visibleTableColumns } from '../data/phangs-table.js';
 import { nebulaOptions } from '../data/nebulae.js';
 
 const OVERLAY_KEYS = { t: 'trends', l: 'literature', a: 'axes' };
@@ -87,7 +88,10 @@ export function initUrlState(app, ui) {
     P.set('c', s.color == null ? '-' : s.color);
     if (s.filters.needColor) P.set('cv', '1');
     if (s.phangs?.sizeMode === 'ned-exponential') P.set('phs', 'ned-exponential');
-    if (s.presentation === 'table') P.set('phv', 'table');
+    P.set('phv', s.presentation === 'plot' ? 'plot' : 'table');
+    P.set('phg', normalizeTablePreset(s.tablePreset));
+    P.set('phcols', JSON.stringify(visibleTableColumns(s).map(c => c.key)));
+    if (s.phangs?.nameQuery) P.set('phq', s.phangs.nameQuery);
     const tableSort = normalizeTableSort(s.tableSort);
     if (tableSort.key !== 'name' || tableSort.direction !== 'asc') {
       P.set('phts', tableSort.key); P.set('phtd', tableSort.direction);
@@ -199,7 +203,7 @@ export function initUrlState(app, ui) {
     }));
     const nebula = nebulaOptions({ nebulaDisplay: P.get('phnd'), nebulaSummary: P.get('phnm') });
     const table = tableLinkState(P);
-    store.set({ presentation: table.presentation, tableSort: table.tableSort, phangs: { columnFilters: table.columnFilters, sizeMode: P.get('phs') === 'ned-exponential' ? 'ned-exponential' : 'none',
+    store.set({ presentation: table.presentation, tableSort: table.tableSort, tablePreset: table.tablePreset, tableColumns: table.tableColumns, phangs: { nameQuery: table.nameQuery, columnFilters: table.columnFilters, sizeMode: P.get('phs') === 'ned-exponential' ? 'ned-exponential' : 'none',
       images: P.get('phi') === '1',
       surveys: normalizeSurveyFilters(surveys), nebulaDisplay: nebula.display, nebulaSummary: nebula.summary } }, { source: 'url' });
     actions.setOverlay('phangs', P.get('pho') !== '0');

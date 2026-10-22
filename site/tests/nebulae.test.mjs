@@ -236,16 +236,21 @@ test('shared links restore nebular options and old links retain defaults', async
   f.app.camera.set = () => {};
   f.app.camera.fitBounds = () => {};
   const url = initUrlState(f.app, {});
-  f.app.store.set({ presentation: 'table', tableSort: { key: 'logM', direction: 'desc' },
-    phangs: { nebulaDisplay: 'both', nebulaSummary: 'median', images: true, columnFilters: [{ key: 'logM', min: 10 }] } });
+  f.app.store.set({ presentation: 'table', tablePreset: 'muse', tableColumns: { muse: ['name', 'muse_EBV'] }, tableSort: { key: 'logM', direction: 'desc' },
+    phangs: { nameQuery: 'M 74', nebulaDisplay: 'both', nebulaSummary: 'median', images: true, columnFilters: [{ key: 'logM', min: 10 }] } });
   const encoded = url.encode();
   assert.match(encoded, /phnd=both/);
   assert.match(encoded, /phnm=median/);
   assert.match(encoded, /phi=1/);
+  assert.match(encoded, /phg=muse/);
+  assert.match(encoded, /phq=M\+74/);
   url.restore('#' + encoded);
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'both', summary: 'median' });
   assert.equal(f.app.store.get().phangs.images, true);
   assert.equal(f.app.store.get().presentation, 'table');
+  assert.equal(f.app.store.get().tablePreset, 'muse');
+  assert.deepEqual(f.app.store.get().tableColumns.muse, ['name', 'muse_EBV']);
+  assert.equal(f.app.store.get().phangs.nameQuery, 'M 74');
   assert.deepEqual(f.app.store.get().tableSort, { key: 'logM', direction: 'desc' });
   assert.deepEqual(f.app.store.get().phangs.columnFilters, [{ key: 'logM', min: 10 }]);
   url.restore('#c=-&phnd=bogus&phnm=bogus');
@@ -253,6 +258,8 @@ test('shared links restore nebular options and old links retain defaults', async
   url.restore('#c=-');
   assert.equal(f.app.store.get().phangs.images, false);
   assert.equal(f.app.store.get().presentation, 'plot');
+  assert.equal(f.app.store.get().tablePreset, 'global');
+  assert.equal(f.app.store.get().phangs.nameQuery, '');
   assert.deepEqual(f.app.store.get().tableSort, { key: 'name', direction: 'asc' });
   assert.deepEqual(f.app.store.get().phangs.columnFilters, []);
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'summary', summary: 'mean' });
@@ -342,4 +349,11 @@ test('column selection agrees across galaxy markers, counts, region hosts and se
   f.api.draw(f.ctx);
   assert.equal(counts.matching, phangs.galaxies.length);
   assert.equal(f.api.nebulae.stats.matching, regions.regions.length);
+  f.app.store.set({ phangs: { nameQuery: 'M 74' } });
+  f.api.draw(f.ctx);
+  assert.equal(counts.matching, 1);
+  assert.equal(f.api.nebulae.stats.matching, regions.regions.filter(r => r.galaxy === 'ngc0628').length);
+  f.app.store.set({ phangs: { nameQuery: '' } });
+  f.api.draw(f.ctx);
+  assert.equal(counts.matching, phangs.galaxies.length);
 });

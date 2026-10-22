@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PHANGS_COLUMNS, formatCell, missing, normalizeColumnFilters, normalizeTableSort,
-  matchesPhangsSelection, sortPhangsRows, tableLinkState } from '../js/data/phangs-table.js';
+  matchesPhangsSelection, sortPhangsRows, tableLinkState, TABLE_PRESETS, normalizeVisibleColumns, visibleTableColumns, needsMuseMethod, clearPhangsFilters } from '../js/data/phangs-table.js';
 import { projectPhangs } from '../js/view/overlays/phangs.js';
 import { frameFromCombos } from '../js/math/frame.js';
 
@@ -95,10 +95,10 @@ test('selection includes catalogue galaxies unavailable on current axes', () => 
 });
 
 test('link defaults and malformed or unknown optional table settings are safe', () => {
-  assert.deepEqual(tableLinkState(new URLSearchParams()), { presentation: 'plot', tableSort: { key: 'name', direction: 'asc' }, columnFilters: [] });
+  assert.deepEqual(tableLinkState(new URLSearchParams()), { presentation: 'table', tablePreset: 'global', tableColumns: { global: TABLE_PRESETS[0].keys }, nameQuery: '', tableSort: { key: 'name', direction: 'asc' }, columnFilters: [] });
   const filters = [{ key: 'logM', min: 10 }, { key: 'morph_string', values: ['Sb', 'Sc'] }, { key: 'name', text: 'ngc&x:=' }];
   const params = new URLSearchParams({ phv: 'table', phts: 'logM', phtd: 'desc', phcf: JSON.stringify(filters) });
-  assert.deepEqual(tableLinkState(new URLSearchParams(params.toString())), { presentation: 'table', tableSort: { key: 'logM', direction: 'desc' }, columnFilters: filters });
+  assert.deepEqual(tableLinkState(new URLSearchParams(params.toString())), { presentation: 'table', tablePreset: 'global', tableColumns: { global: TABLE_PRESETS[0].keys }, nameQuery: '', tableSort: { key: 'logM', direction: 'desc' }, columnFilters: filters });
   for (const value of ['bad JSON', '{}', 'null', '[null,{}, {"key":"__proto__"}]']) assert.deepEqual(tableLinkState(new URLSearchParams({ phcf: value })).columnFilters, []);
   assert.deepEqual(normalizeColumnFilters([{ key: 'logM', min: 11, max: 9 }, { key: 'name', text: ' ' }, { key: 'logM', min: Infinity }]), []);
   assert.deepEqual(normalizeTableSort({ key: '__proto__', direction: 'bad' }), { key: 'name', direction: 'asc' });
@@ -112,4 +112,54 @@ test('table formatting keeps tiny and very large science values readable', () =>
   assert.match(formatCell(mass, 1e-8), /e-8$/);
   assert.equal(formatCell(mass, 0), '0');
   assert.equal(formatCell(mass, null), '—');
+});
+
+
+test('focused property groups retain all science fields in the registry and pin galaxy names', () => {
+  assert.equal(PHANGS_COLUMNS.length, 131);
+  assert.deepEqual(TABLE_PRESETS.map(p => p.id), ['global', 'sizes', 'morphology', 'observations', 'muse']);
+  for (const preset of TABLE_PRESETS) {
+    const columns = visibleTableColumns({ tablePreset: preset.id });
+    assert.equal(columns[0].key, 'name');
+    assert.equal(columns.length, preset.keys.length);
+    assert.ok(columns.length >= 7 && columns.length <= 9);
+  }
+  assert.deepEqual(normalizeVisibleColumns(['ra', 'ra', 'bad', 'name']), ['name', 'ra']);
+  assert.deepEqual(normalizeVisibleColumns([]), ['name']);
+  const state = { tablePreset: 'sizes', tableColumns: { global: ['name', 'ra'], sizes: ['name', 'size_r90_arcsec'] } };
+  assert.deepEqual(visibleTableColumns(state).map(c => c.key), ['name', 'size_r90_arcsec']);
+  assert.deepEqual(visibleTableColumns({ ...state, tablePreset: 'global' }).map(c => c.key), ['name', 'ra']);
+  assert.deepEqual(visibleTableColumns({ ...state, tableColumns: { sizes: null } }).map(c => c.key), TABLE_PRESETS[1].keys);
+});
+
+test('MUSE controls follow visible measurements or active hidden-column filters', () => {
+  assert.equal(needsMuseMethod({ tablePreset: 'global' }), false);
+  assert.equal(needsMuseMethod({ tablePreset: 'muse' }), true);
+  assert.equal(needsMuseMethod({ tablePreset: 'muse', tableColumns: { muse: ['name'] } }), false);
+  assert.equal(needsMuseMethod({ phangs: { columnFilters: [{ key: 'muse_OH_PP04', min: 8.5 }] } }), true);
+});
+
+test('new links preserve active group, custom columns and shared names; old links remain plots', () => {
+  assert.equal(tableLinkState(new URLSearchParams('p=sfms')).presentation, 'plot');
+  assert.equal(tableLinkState(new URLSearchParams('phv=plot')).presentation, 'plot');
+  assert.equal(tableLinkState(new URLSearchParams('phv=table')).presentation, 'table');
+  const state = tableLinkState(new URLSearchParams({ phv: 'table', phg: 'muse', phq: 'M 74', phcols: JSON.stringify(['muse_OH_PP04', 'bad']) }));
+  assert.equal(state.tablePreset, 'muse');
+  assert.equal(state.nameQuery, 'M 74');
+  assert.deepEqual(state.tableColumns.muse, ['name', 'muse_OH_PP04']);
+  assert.deepEqual(tableLinkState(new URLSearchParams('phg=bad&phcols=bad')).tableColumns.global, TABLE_PRESETS[0].keys);
+});
+
+test('clear all removes shared filters and leaves measurement/presentation settings untouched', async () => {
+  const { Store } = await import('../js/state.js');
+  const store = new Store({ tablePreset: 'muse', tableSort: { key: 'logM', direction: 'desc' }, tableColumns: { muse: ['name', 'muse_EBV'] },
+    phangs: { nameQuery: 'ngc', columnFilters: [{ key: 'logM', min: 10 }], surveys: { alma: { program: 'ecmz' } }, nebulaSummary: 'median' } });
+  store.set({ phangs: clearPhangsFilters() });
+  assert.equal(store.get().phangs.nameQuery, '');
+  assert.deepEqual(store.get().phangs.columnFilters, []);
+  assert.ok(Object.values(store.get().phangs.surveys).every(v => v === null));
+  assert.equal(store.get().phangs.nebulaSummary, 'median');
+  assert.equal(store.get().tablePreset, 'muse');
+  assert.equal(store.get().tableSort.direction, 'desc');
+  assert.deepEqual(store.get().tableColumns.muse, ['name', 'muse_EBV']);
 });

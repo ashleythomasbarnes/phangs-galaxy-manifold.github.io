@@ -13,11 +13,10 @@ export function initRail(app, mount, ui) {
   toggle.addEventListener('change', () => app.actions.setOverlay('phangs', toggle.checked));
   const root = h('div', { class: 'survey-rail' });
   const summary = h('span', { class: 'survey-total', text: 'Loading…', role: 'status' });
-  const clear = h('button', { class: 'survey-clear', type: 'button', text: 'Clear filters', hidden: true });
   const note = h('p', { class: 'survey-rail-note', text: 'PHANGS catalogue + morphology overview' });
   root.append(h('div', { class: 'survey-rail-head' },
     h('label', { class: 'survey-overlay-toggle' }, h('b', { text: 'PHANGS' }), toggle),
-    h('span', { text: 'Observations' })), summary, ui.table?.switchMount);
+    h('span', { text: 'Observations' })), summary);
   mount.replaceChildren(root);
   mount.setAttribute('aria-label', 'PHANGS observations');
   const items = new Map();
@@ -51,8 +50,7 @@ export function initRail(app, mount, ui) {
     items.set(s.id, { s, chip, tally, body, pop });
     root.append(chip);
   }
-  root.append(clear, note);
-  clear.addEventListener('click', () => store.set({ phangs: { surveys: Object.fromEntries(PHANGS_SURVEYS.map(s => [s.id, null])) } }));
+  root.append(note);
 
   function select(s, filter) {
     store.set({ phangs: { surveys: { [s.id]: filter } }, overlays: { phangs: true } });
@@ -95,7 +93,6 @@ export function initRail(app, mount, ui) {
     toggle.checked = store.get().overlays.phangs !== false;
     toggle.disabled = failed;
     const active = PHANGS_SURVEYS.filter(s => filters()[s.id]);
-    clear.hidden = !active.length;
     root.classList.toggle('filtered', !!active.length);
     summary.textContent = catalogue ? `${catalogue.galaxies.filter(r => matchesPhangsSelection(r, store.get().phangs, phangsTableContext(app))).length} / ${catalogue.galaxies.length} selected` : failed ? 'Unavailable' : 'Loading…';
     note.textContent = active.length ? 'All selected surveys must match' : 'PHANGS catalogue + morphology overview';
@@ -112,5 +109,9 @@ export function initRail(app, mount, ui) {
   events.on('phangs:ready', c => { catalogue = c; failed = !c; update(); });
   events.on('state', ({ changed }) => { if (changed.some(k => ['phangs', 'overlays'].includes(k))) update(); });
   update();
-  return { close: () => { let closed = false; for (const i of items.values()) closed = i.pop.close() || closed; return closed; } };
+  return { openSurvey: id => {
+    const item = items.get(id);
+    if (!item) return;
+    ui.closeMenus(); renderPanel(item.s); item.pop.show();
+  }, close: () => { let closed = false; for (const i of items.values()) closed = i.pop.close() || closed; return closed; } };
 }

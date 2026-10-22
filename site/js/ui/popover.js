@@ -2,7 +2,7 @@
 import { floatLayer, clamp, isNarrow } from './dom.js';
 import { hideTip } from './tooltip.js';
 
-export function createPopover(anchor, panel, { side = 'bottom' } = {}) {
+export function createPopover(anchor, panel, { side = 'bottom', fallbackFocus = null } = {}) {
   panel.hidden = true;
   floatLayer().append(panel);
   anchor.setAttribute('aria-controls', panel.id);
@@ -22,7 +22,10 @@ export function createPopover(anchor, panel, { side = 'bottom' } = {}) {
     if (panel.hidden) return false;
     panel.hidden = true;
     anchor.setAttribute('aria-expanded', 'false');
-    if (focus) anchor.focus({ preventScroll: true });
+    if (focus) {
+      const fallback = typeof fallbackFocus === 'function' ? fallbackFocus() : fallbackFocus;
+      (anchor.isConnected === false && fallback ? fallback : anchor).focus({ preventScroll: true });
+    }
     return true;
   }
   function show() {
@@ -30,7 +33,7 @@ export function createPopover(anchor, panel, { side = 'bottom' } = {}) {
     panel.hidden = false;
     anchor.setAttribute('aria-expanded', 'true');
     place();
-    panel.querySelector('button:not(:disabled), input:not(:disabled)')?.focus({ preventScroll: true });
+    panel.querySelector('button:not(:disabled), input:not(:disabled), select:not(:disabled)')?.focus({ preventScroll: true });
   }
   document.addEventListener('pointerdown', e => {
     if (!panel.contains(e.target) && !anchor.contains(e.target)) close();
@@ -44,7 +47,7 @@ export function createPopover(anchor, panel, { side = 'bottom' } = {}) {
   }, true);
   panel.addEventListener('keydown', e => {
     if (e.key !== 'Tab') return;
-    const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled)')];
+    const controls = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled)')];
     if ((e.shiftKey && e.target === controls[0]) || (!e.shiftKey && e.target === controls.at(-1))) {
       e.preventDefault();
       close(true);
@@ -52,5 +55,9 @@ export function createPopover(anchor, panel, { side = 'bottom' } = {}) {
   });
   window.addEventListener('resize', place);
   document.addEventListener('scroll', e => { if (!panel.contains(e.target)) place(); }, true);
-  return { show, close, place, get open() { return !panel.hidden; } };
+  return { show, close, place, setAnchor(next) {
+    close(); anchor = next;
+    anchor.setAttribute('aria-controls', panel.id);
+    anchor.setAttribute('aria-expanded', 'false');
+  }, get open() { return !panel.hidden; } };
 }

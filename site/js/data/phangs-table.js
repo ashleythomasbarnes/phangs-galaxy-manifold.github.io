@@ -1,5 +1,6 @@
 // One registry and predicate for the table, markers, regions, search and counts.
-import { matchesPhangsSurveys } from './surveys.js';
+import { matchesGalaxyName } from './galaxy-names.js';
+import { normalizeSurveyFilters, matchesPhangsSurveys } from './surveys.js';
 import { NEBULA_KEYS, NEBULA_LABELS, NEBULA_SUMMARIES } from './nebulae.js';
 
 export const PHANGS_COLUMNS = [];
@@ -129,7 +130,7 @@ export function phangsTableContext(app) {
   return { summary: name => nebulae?.summary?.(name), method: app.store.get().phangs?.nebulaSummary || 'mean', museReady: !!nebulae?.catalogue };
 }
 export function matchesPhangsSelection(row, state = {}, ctx = {}) {
-  if (!matchesPhangsSurveys(row, state.surveys)) return false;
+  if (!matchesGalaxyName(row, state.nameQuery) || !matchesPhangsSurveys(row, state.surveys)) return false;
   return (state.columnFilters || []).every(f => {
     const col = byKey.get(f.key);
     if (!col) return true;
@@ -151,10 +152,39 @@ export function sortPhangsRows(rows, sort, ctx = {}) {
     return order * sign || collator.compare(a.name, b.name);
   });
 }
-// Used by both URL serialization and restoration; old links get these defaults.
+export const TABLE_PRESETS = [
+  { id: 'global', label: 'Global', keys: ['name', 'logM', 'logSFR', 'logsSFR', 'dist', 'orient_incl', 'morph_string'] },
+  { id: 'sizes', label: 'Sizes', keys: ['name', 'dist', 'size_r90_kpc', 'size_r25_kpc', 'size_reff_kpc', 'size_scalelength_kpc', 'ned_exponential_size_kpc'] },
+  { id: 'morphology', label: 'Morphology', keys: ['name', 'morph_string', 'morph_t', 'morph_bar', 'morph_interacting', 'overview_gleis26_ring', 'overview_mw_like_evans26'] },
+  { id: 'observations', label: 'Observations', keys: ['name', 'survey_alma_status', 'survey_alma_instrument', 'overview_ecmz', 'overview_dense_gas_surveys', 'survey_muse_status', 'survey_hst_status', 'survey_hi_status', 'survey_hi_instrument'] },
+  { id: 'muse', label: 'MUSE', keys: ['name', 'muse_OH_PP04', 'muse_N2Ha', 'muse_O3Hb', 'muse_HaHb', 'muse_met_scal', 'muse_EBV'] },
+];
+export function normalizeTablePreset(id) {
+  return TABLE_PRESETS.some(p => p.id === id) ? id : 'global';
+}
+export function normalizeVisibleColumns(keys, preset = 'global') {
+  const defaults = TABLE_PRESETS.find(p => p.id === normalizeTablePreset(preset)).keys;
+  return Array.isArray(keys) ? ['name', ...new Set(keys.filter(k => k !== 'name' && byKey.has(k)))] : [...defaults];
+}
+export function visibleTableColumns(state) {
+  const preset = normalizeTablePreset(state.tablePreset);
+  return normalizeVisibleColumns(state.tableColumns?.[preset], preset).map(k => byKey.get(k));
+}
+export function needsMuseMethod(state) {
+  return visibleTableColumns(state).some(c => c.group === 'MUSE summaries') ||
+    (state.phangs?.columnFilters || []).some(f => byKey.get(f.key)?.group === 'MUSE summaries');
+}
+export function clearPhangsFilters() {
+  return { nameQuery: '', columnFilters: [], surveys: normalizeSurveyFilters({}) };
+}
+// Fresh visits start with the catalogue; legacy nonempty plot links retain their view.
 export function tableLinkState(params) {
-  let filters = [];
+  let filters = [], columns;
   try { filters = normalizeColumnFilters(JSON.parse(params.get('phcf') || '[]')); } catch { /* malformed optional state */ }
-  return { presentation: params.get('phv') === 'table' ? 'table' : 'plot',
+  try { columns = JSON.parse(params.get('phcols')); } catch { /* default columns */ }
+  const tablePreset = normalizeTablePreset(params.get('phg'));
+  return { presentation: params.get('phv') === 'table' || !params.toString() ? 'table' : 'plot',
+    tablePreset, tableColumns: { [tablePreset]: normalizeVisibleColumns(columns, tablePreset) },
+    nameQuery: (params.get('phq') || '').trim(),
     tableSort: normalizeTableSort({ key: params.get('phts'), direction: params.get('phtd') }), columnFilters: filters };
 }

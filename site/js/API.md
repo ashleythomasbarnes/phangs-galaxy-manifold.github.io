@@ -24,27 +24,41 @@ DSS tiles, requested lazily after camera motion settles. Links encode this as
 also disable this toggle. Image picking passes through the stage interaction so
 pan, zoom and lasso still work across tiles; SDSS Glow/Mosaic stays independent.
 
-The catalogue table uses `store.presentation` (`plot` or `table`), separate from
-SDSS `store.mode`. `store.tableSort` is `{key, direction: 'asc'|'desc'}`; the default
-is ascending `name`. `store.phangs.columnFilters` is a replacement array of
+The catalogue table uses `store.presentation` (`table` by default, or `plot`),
+separate from SDSS `store.mode`. `store.tablePreset` selects `global`, `sizes`,
+`morphology`, `observations` or `muse`; `store.tableColumns[preset]` stores an
+optional array of visible column keys (`null` restores that group's preset).
+`visibleTableColumns(state)` always pins `name`. Column changes leave filters and
+`store.tableSort` (`{key, direction: 'asc'|'desc'}`, ascending `name` by default)
+untouched. `store.phangs.nameQuery` matches canonical names and aliases using
+case/whitespace/zero-padding normalization in `data/galaxy-names.js`.
+`store.phangs.columnFilters` is a replacement array of
 `{key, presence?, min?, max?, text?, values?}`. Use `normalizeColumnFilters()`
 from `data/phangs-table.js` before storing external input. Inclusive numeric bounds,
-case-insensitive text and categorical OR compose with AND across columns and surveys.
-`presence` is `missing` or `present`; omit it for unrestricted availability.
+case-insensitive text and categorical OR compose with AND across columns, names
+and surveys. `presence` is `missing` or `present`; omit it for unrestricted
+availability. `clearPhangsFilters()` supplies the name, column and survey reset
+patch without affecting columns, sorting or measurement methods.
 `matchesPhangsSelection(row, state.phangs, phangsTableContext(app))` is shared by
-markers, region hosts, search and selected counts. Table rows do not depend on
-projection visibility or the PHANGS overlay toggle. Individual chip tallies remain
-survey coverage counts. `nebulae.summary(name)`, `nebulae.catalogue` and
-`nebulae.summaryError` expose the already-loaded MUSE summary; no region fetch is
-needed for table mode. Pending/failed MUSE data do not satisfy MUSE column filters.
-Links use `phv=table`, `phts`/`phtd` for sorting and `phcf` for normalized JSON filters.
-Entering the table stops tour/camera motion without changing the current frame.
+markers, region hosts, search status and selected counts. Table rows do not depend
+on projection visibility or the PHANGS overlay toggle. Individual survey-chip
+tallies remain coverage counts. `nebulae.summary(name)`, `nebulae.catalogue` and
+`nebulae.summaryError` expose the loaded MUSE summary; no region fetch is needed
+for the table. Pending/failed MUSE data do not satisfy MUSE column filters.
+`needsMuseMethod(state)` exposes the method control only for visible MUSE
+measurements or active MUSE measurement filters, including hidden columns.
+New links explicitly set `phv=table|plot`; `phg` and `phcols` store the active
+property group and its visible keys, `phq` stores name/alias search, `phts`/`phtd`
+store sorting and `phcf` stores normalized JSON filters. An empty URL opens the
+table, while nonempty legacy links without `phv` retain their Plot behaviour.
+Entering the table stops tour/camera motion without changing the current frame;
+the camera retains its centre, scale and aspect through the footer layout resize.
 
 The observations rail owns the PHANGS visibility toggle. Plot controls are
 contextual: size controls require `logR50` or `logSigma`, MUSE controls require
 one of its four shared nebular dimensions. Neither panel appears on global-only
 views or while PHANGS is off. `phangs.inspect(row)` opens a PHANGS galaxy from
-the header search; it preserves SDSS selections.
+the table or a plot marker; it preserves SDSS selections.
 `ui.header.search.close()` participates in `ui.closeMenus()`. The PHANGS
 information dialog and the SDSS reference-data dialog are mutually exclusive.
 All presets share the header Views menu. PHANGS inspectors display source morphology

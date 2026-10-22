@@ -48,6 +48,7 @@ export async function initUI(app) {
       closeColorPopover();
       closed = true;
     }
+    closed = ui.table?.closePanel() || closed;
     closed = ui.rail?.close() || closed;
     closed = ui.header?.presets.close() || closed;
     closed = ui.header?.search.close() || closed;

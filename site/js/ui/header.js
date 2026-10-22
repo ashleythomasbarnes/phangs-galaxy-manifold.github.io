@@ -32,6 +32,7 @@ export function initHeader(app, mount, ui) {
 
   const searchMount = h('div', { class: 'tb-search' });
   const search = initGalaxySearch(app, searchMount, ui);
+  const viewMount = h('div', { class: 'tb-presentation' });
   const carts = h('div', { class: 'tb-carts' });
   const about = h('button', { class: 'tb-about tb-info-button', type: 'button', 'aria-label': 'SDSS information, credits and shortcuts' },
     h('span', { html: icon('info') }), h('small', { text: 'SDSS' }));
@@ -43,9 +44,16 @@ export function initHeader(app, mount, ui) {
   phangsAbout.addEventListener('click', () => { ui.closeMenus(); ui.about?.hide(); ui.phangsInfo?.toggle(); });
 
   mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge), searchMount,
-    h('div', { class: 'tb-actions' }, carts, h('div', { class: 'tb-info-buttons' }, phangsAbout, about))));
+    h('div', { class: 'tb-actions' }, viewMount, carts, h('div', { class: 'tb-info-buttons' }, phangsAbout, about))));
 
   const presets = initPresets(app, carts, ui);
+
+  function syncPresentation() {
+    carts.hidden = app.store.get().presentation === 'table';
+    if (carts.hidden) presets.close();
+  }
+  app.events.on('state', ({ changed }) => { if (changed.includes('presentation')) syncPresentation(); });
+  syncPresentation();
 
   // live count of galaxies in view (vis ≥ 50%, filters included), refreshed at each settle
   let last = -1;
@@ -72,5 +80,5 @@ export function initHeader(app, mount, ui) {
     if (changed.includes('tour')) mount.classList.toggle('touring', !!state.tour.playing);
   });
 
-  return { presets, about, phangsAbout, search, recount };
+  return { presets, about, phangsAbout, search, recount, viewMount };
 }

@@ -59,9 +59,11 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     presetId: null,
     color: null,
     mode: 'glow',
-    presentation: 'plot',
+    presentation: 'table',
     tableSort: { key: 'name', direction: 'asc' },
-    phangs: { columnFilters: [] },
+    tablePreset: 'global',
+    tableColumns: {},
+    phangs: { columnFilters: [], nameQuery: '' },
     overlays: { trends: true, literature: true, axes: true, phangs: true },
     filters: { z: null, cats: { ...catMasksAll }, needColor: false },
     tour: { playing: false, set: defaultTourSet(data.dims), speed: 1 },
@@ -837,7 +839,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
   app.start = () => {
     if (app.started) return;
     app.started = true;
-    if (!viewTouched && defaultPresetId) actions.applyPreset(defaultPresetId, { duration: MOTION.arrivalMs });
+    if (!viewTouched && defaultPresetId) actions.applyPreset(defaultPresetId, { duration: store.get().presentation === 'table' ? 0 : MOTION.arrivalMs });
     requestRender();
   };
 
