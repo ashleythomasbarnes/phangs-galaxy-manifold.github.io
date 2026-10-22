@@ -8,6 +8,7 @@ import { initTooltips } from './tooltip.js';
 import { initSplash } from './splash.js';
 import { createDnd } from './dnd.js';
 import { initHeader } from './header.js?v=2';
+import { initPhangsTable } from './phangs-table.js';
 import { initRail } from './rail.js?v=2';
 import { initConsole } from './console.js';
 import { initInspector } from './inspector.js?v=2';
@@ -64,6 +65,7 @@ export async function initUI(app) {
 
   ui.dnd = step('dnd', () => createDnd(app, ui));
   ui.header = step('header', () => initHeader(app, $('topbar'), ui));
+  ui.table = step('PHANGS table', () => initPhangsTable(app, ui));
   ui.rail = step('rail', () => initRail(app, $('rail'), ui));
   ui.console = step('console', () => initConsole(app, $('console'), ui));
   ui.inspector = step('inspector', () => initInspector(app, $('inspector'), ui));

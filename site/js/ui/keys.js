@@ -61,7 +61,7 @@ export function initKeys(app, ui) {
 
   document.addEventListener('keydown', (e) => {
     if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (typing(e.target)) return;
+    if (ui.table?.dialogOpen || typing(e.target)) return;
     const k = e.key;
     if (k === 'Escape') {
       if (escape()) e.preventDefault();
@@ -73,7 +73,7 @@ export function initKeys(app, ui) {
       ui.about?.toggle();
       return;
     }
-    if (ui.about?.open || ui.phangsInfo?.open) return;
+    if (ui.about?.open || ui.phangsInfo?.open || store.get().presentation === 'table') return;
     if (!data.loaded && k !== ' ') return;
     if (/^[0-9]$/.test(k)) {
       const i = k === '0' ? 9 : Number(k) - 1;

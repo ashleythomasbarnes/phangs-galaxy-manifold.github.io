@@ -59,6 +59,9 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     presetId: null,
     color: null,
     mode: 'glow',
+    presentation: 'plot',
+    tableSort: { key: 'name', direction: 'asc' },
+    phangs: { columnFilters: [] },
     overlays: { trends: true, literature: true, axes: true, phangs: true },
     filters: { z: null, cats: { ...catMasksAll }, needColor: false },
     tour: { playing: false, set: defaultTourSet(data.dims), speed: 1 },
@@ -475,6 +478,11 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
 
   // ------------------------------------------------------------------ store reactions
   store.subscribe((s, changed, source, prev) => {
+    if (changed.includes('presentation') && s.presentation === 'table') {
+      stopTourNow();
+      if (frameAnim) { frameAnim.resolve(); frameAnim = null; }
+      camera.stop();
+    }
     for (const k of changed) {
       if (k === 'color') {
         colorCache = null;

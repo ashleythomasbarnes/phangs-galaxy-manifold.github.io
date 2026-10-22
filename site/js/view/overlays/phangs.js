@@ -2,7 +2,8 @@
 import { fadeFactors } from '../../math/frame.js';
 import { h } from '../../ui/dom.js';
 import { phangsValues, phangsImageUrl } from '../../data/phangs.js?v=3';
-import { PHANGS_SURVEYS, ALMA_ARRAYS, ALMA_PROGRAMS, matchesPhangsSurveys } from '../../data/surveys.js?v=2';
+import { matchesPhangsSelection, phangsTableContext } from '../../data/phangs-table.js';
+import { PHANGS_SURVEYS, ALMA_ARRAYS, ALMA_PROGRAMS } from '../../data/surveys.js?v=2';
 import { createNebulae } from './nebulae.js';
 import { phangsDataChips } from '../../ui/phangs-chips.js?v=2';
 
@@ -62,7 +63,7 @@ export function createPhangs(app, ov) {
   markers.append(ring);
   const enabled = () => app.store.get().overlays.phangs !== false;
   const surveyFilters = () => app.store.get().phangs?.surveys || {};
-  const matches = row => matchesPhangsSurveys(row, surveyFilters());
+  const matches = row => matchesPhangsSelection(row, app.store.get().phangs, phangsTableContext(app));
   const sizeMode = () => app.store.get().phangs?.sizeMode || 'none';
   const values = row => nebulae.values(row, phangsValues(row, sizeMode()));
   const imagesEnabled = () => app.store.get().phangs?.images === true && data.manifest?.host?.externalImages !== false;
@@ -75,8 +76,8 @@ export function createPhangs(app, ov) {
   details.addEventListener('pointerenter', clearSDSSHover);
   const nebulae = createNebulae(app, ov, {
     hosts: () => catalogue?.galaxies || [], baseValues: row => phangsValues(row, sizeMode()),
-    project: projectPhangs, inspect, selected: () => selected,
-    changed: () => { renderDetails(); app.events.emit('phangs:measurements'); ov.invalidate(); },
+    project: projectPhangs, matches, inspect, selected: () => selected,
+    changed: () => { if (selected && !matches(selected)) close(); renderDetails(); app.events.emit('phangs:measurements'); ov.invalidate(); },
   });
   controls.append(nebulae.controls);
 

@@ -9,6 +9,7 @@ You can rotate the projection by hand, let it rotate on its own, or jump to a kn
 ## What you can do
 
 - Open a PHANGS observation chip on the left to filter by survey, observation status or ALMA array configuration. Selections across surveys must all match.
+- Switch **Plot / Table** beside the PHANGS selection count to browse all galaxy properties. Click headings to sort, or their filter buttons for ranges, categories and missing values. Column filters apply to both views; galaxy names open the inspector. Table mode includes MUSE galaxy summaries and preserves its filters and sorting in copied links.
 - Toggle PHANGS points at the top of the observations rail. Size and MUSE controls appear in the plot only when their axes contribute to the view.
 - Use the PHANGS image button beside Glow/Mosaic to replace galaxy markers with DSS tiles. Tiles follow the observation filters and plotted positions; click one to inspect it. The choice is included in shared links.
 - Search PHANGS names or aliases in the header, then select a result to inspect it. Filtered galaxies and unavailable axis measurements are identified in the results.

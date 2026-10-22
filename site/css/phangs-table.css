@@ -1,0 +1,77 @@
+/* Catalogue view uses the manifold's existing surfaces, type and survey accents. */
+.phangs-view-switch { display: flex; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 3px; }
+.phangs-view-switch button { flex: 1; padding: 6px 2px; border: 0; border-radius: 5px; color: var(--cream-2); background: transparent; font: 400 10px/1.3 var(--font-ui); cursor: pointer; }
+.phangs-view-switch button[aria-pressed="true"] { background: var(--bg-3); color: #7de2d1; }
+.phangs-table-panel[hidden], .phangs-active-filters[hidden] { display: none; }
+.phangs-table-panel { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; min-width: 0; background: var(--bg); color: var(--cream); }
+.phangs-table-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 24px 16px; border-bottom: 1px solid var(--line); }
+.phangs-table-toolbar h2 { margin: 0 0 6px; font: 400 18px/1.3 var(--font-ui); }
+.phangs-table-status { margin: 0; color: var(--cream-2); font: 400 10px/1.5 var(--font-mono); }
+.phangs-table-toolbar label { display: grid; gap: 5px; color: var(--cream-2); font: 400 10px/1.4 var(--font-ui); }
+.phangs-table-toolbar select, .phangs-table-dialog :is(input:not([type="checkbox"]), select) { padding: 8px 10px; background: var(--bg-2); color: var(--cream); border: 1px solid var(--line); border-radius: 5px; font: 400 12px/1.4 var(--font-ui); min-width: 0; }
+.phangs-table-scroll { min-height: 0; flex: 1; overflow: auto; overscroll-behavior: contain; scrollbar-color: var(--line) var(--bg); }
+.phangs-table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; table-layout: fixed; font: 400 11px/1.5 var(--font-mono); }
+.phangs-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.phangs-table th, .phangs-table td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 9px 12px; min-width: 156px; max-width: 220px; overflow-wrap: anywhere; background: var(--bg); }
+.phangs-table thead th { position: sticky; z-index: 3; background: var(--bg-2); text-align: left; font-weight: 400; }
+.phangs-table thead tr:first-child th { top: 0; height: 32px; padding-top: 0; padding-bottom: 0; color: var(--cream-3); font: 400 9px/1.4 var(--font-display); letter-spacing: .1em; text-transform: uppercase; }
+.phangs-table thead tr:nth-child(2) th { top: 33px; vertical-align: top; }
+.phangs-table thead small { display: block; color: var(--cream-3); font: 400 9px/1.5 var(--font-mono); padding-top: 5px; }
+.phangs-table thead tr:nth-child(2) th:first-child, .phangs-table tbody th { position: sticky; left: 0; z-index: 4; min-width: 136px; max-width: 136px; border-right-color: var(--cream-3); box-shadow: 4px 0 8px #0002; }
+.phangs-table tbody th { z-index: 2; text-align: left; }
+.phangs-table tbody tr:nth-child(even) > * { background: #0e131b; }
+.phangs-table tbody tr:hover > * { background: var(--bg-3); }
+.table-heading { display: flex; align-items: flex-start; gap: 7px; }
+.phangs-table button { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; text-align: inherit; }
+.phangs-table .table-sort { flex: 1; font: 400 12px/1.35 var(--font-ui); min-height: 32px; }
+.phangs-table .table-filter { flex: none; width: 25px; height: 28px; border: 1px solid var(--line); border-radius: 4px; font-size: 17px; color: var(--cream-2); }
+.phangs-table .table-filter.active { color: #7de2d1; border-color: var(--teal); background: var(--bg-3); }
+.phangs-table .table-galaxy-name { color: #7de2d1; font-size: 11px; white-space: nowrap; }
+.phangs-table .numeric { text-align: right; font-variant-numeric: tabular-nums; }
+.phangs-table .table-cell-detail { text-decoration: underline dotted var(--cream-3); text-underline-offset: 4px; }
+.phangs-table :is(button:hover, button:focus-visible) { color: #7de2d1; }
+.phangs-table-empty { margin: 0; padding: 15px 24px; font: 400 12px/1.5 var(--font-ui); color: var(--cream-2); }
+.phangs-table-empty[hidden] { display: none; }
+.phangs-active-filters { position: absolute; z-index: 9; bottom: 16px; left: 54px; right: 16px; display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-2); font: 400 10px/1.4 var(--font-ui); }
+.phangs-active-filters > * { flex: none; }
+.phangs-active-filters > span { color: var(--cream-3); }
+.phangs-active-filters button { background: var(--bg-3); color: var(--cream); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 5px 10px; font: inherit; white-space: nowrap; cursor: pointer; }
+.phangs-table-panel .phangs-active-filters { position: static; flex: none; margin: 10px 16px; }
+.phangs-table-dialog { color: var(--cream); background: var(--bg-2); border: 1px solid var(--hair-25); border-radius: var(--r-lg); padding: 22px; width: min(390px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; font: 400 13px/1.5 var(--font-ui); }
+.phangs-table-dialog::backdrop { background: #0009; }
+.table-dialog-head { display: flex; align-items: flex-start; gap: 16px; justify-content: space-between; margin-bottom: 16px; }
+.table-dialog-head h2 { margin: 0; font: 400 17px/1.35 var(--font-ui); }
+.phangs-table-dialog button { padding: 6px 10px; color: var(--cream); border: 1px solid var(--line); border-radius: 5px; background: var(--bg-3); font: 400 12px/1.5 var(--font-ui); cursor: pointer; }
+.phangs-table-dialog label { display: grid; gap: 6px; margin-bottom: 12px; color: var(--cream-2); }
+.table-filter-constraints { padding: 0; margin: 12px 0; border: 0; max-height: 40dvh; overflow-y: auto; }
+.table-filter-constraints:disabled { opacity: .4; }
+.table-filter-constraints legend { padding: 0 0 8px; color: var(--cream-2); }
+.phangs-table-dialog .table-filter-choice { display: flex; align-items: center; gap: 10px; margin: 4px 0; padding: 5px; }
+.table-filter-choice input { accent-color: var(--teal); width: 16px; height: 16px; }
+.table-filter-hint { color: var(--cream-3); font-size: 11px; }
+.table-dialog-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.table-dialog-actions button[type="submit"] { border-color: var(--teal); color: #7de2d1; }
+.table-cell-provenance { white-space: pre-line; overflow-wrap: anywhere; color: var(--cream-2); }
+:is(.phangs-table-panel, .phangs-view-switch, .phangs-active-filters, .phangs-table-dialog) :is(button, select, input):focus-visible, .phangs-table-scroll:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+.gm-table-mode #stage > canvas, .gm-table-mode #stage-ui { visibility: hidden; pointer-events: none; }
+.gm-table-mode #console > .con { visibility: hidden; }
+@media (max-width: 759.98px) {
+  .phangs-view-switch { flex: none; align-items: center; }
+  .phangs-view-switch button { padding: 6px 9px; }
+  .phangs-table-toolbar { padding: 12px; gap: 8px; }
+  .phangs-table-toolbar h2 { font-size: 16px; }
+  .phangs-table-status { font-size: 9px; }
+  .phangs-table-toolbar label { display: flex; align-items: center; gap: 8px; }
+  .phangs-table-toolbar select { max-width: 215px; padding: 5px 8px; }
+  .phangs-table-panel .phangs-active-filters { margin: 8px; }
+  .phangs-active-filters { left: 12px; bottom: 10px; right: 12px; }
+}
+
+.table-toolbar-actions { display: flex; align-items: flex-end; gap: 14px; }
+.table-copy-link { padding: 8px 12px; background: var(--bg-3); color: var(--cream); border: 1px solid var(--line); border-radius: 5px; font: 400 12px/1.4 var(--font-ui); cursor: pointer; white-space: nowrap; }
+.phangs-table tbody :is(th, td) { height: 34px; padding-top: 0; padding-bottom: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.phangs-table tbody :is(button, span) { display: block; max-width: 195px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.phangs-table tbody td.numeric button { margin-left: auto; }
+@media (max-width: 759.98px) {
+  .table-toolbar-actions { flex-wrap: wrap; align-items: center; gap: 8px; }
+}

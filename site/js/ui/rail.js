@@ -1,9 +1,10 @@
 // PHANGS observation chips. Survey selections intersect and only filter PHANGS markers.
+import { matchesPhangsSelection, phangsTableContext } from '../data/phangs-table.js';
 import { h } from './dom.js';
 import { icon } from './icons.js';
 import { setTip } from './tooltip.js';
 import { createPopover } from './popover.js';
-import { PHANGS_SURVEYS, ALMA_PROGRAMS, ALMA_ARRAYS, matchesSurvey, matchesPhangsSurveys } from '../data/surveys.js?v=2';
+import { PHANGS_SURVEYS, ALMA_PROGRAMS, ALMA_ARRAYS, matchesSurvey } from '../data/surveys.js?v=2';
 
 export function initRail(app, mount, ui) {
   const { store, events } = app;
@@ -16,7 +17,7 @@ export function initRail(app, mount, ui) {
   const note = h('p', { class: 'survey-rail-note', text: 'PHANGS catalogue + morphology overview' });
   root.append(h('div', { class: 'survey-rail-head' },
     h('label', { class: 'survey-overlay-toggle' }, h('b', { text: 'PHANGS' }), toggle),
-    h('span', { text: 'Observations' })), summary);
+    h('span', { text: 'Observations' })), summary, ui.table?.switchMount);
   mount.replaceChildren(root);
   mount.setAttribute('aria-label', 'PHANGS observations');
   const items = new Map();
@@ -96,7 +97,7 @@ export function initRail(app, mount, ui) {
     const active = PHANGS_SURVEYS.filter(s => filters()[s.id]);
     clear.hidden = !active.length;
     root.classList.toggle('filtered', !!active.length);
-    summary.textContent = catalogue ? `${catalogue.galaxies.filter(r => matchesPhangsSurveys(r, filters())).length} / ${catalogue.galaxies.length} selected` : failed ? 'Unavailable' : 'Loading…';
+    summary.textContent = catalogue ? `${catalogue.galaxies.filter(r => matchesPhangsSelection(r, store.get().phangs, phangsTableContext(app))).length} / ${catalogue.galaxies.length} selected` : failed ? 'Unavailable' : 'Loading…';
     note.textContent = active.length ? 'All selected surveys must match' : 'PHANGS catalogue + morphology overview';
     for (const { s, chip, tally, pop } of items.values()) {
       const f = filters()[s.id];
@@ -107,6 +108,7 @@ export function initRail(app, mount, ui) {
       if (pop.open) renderPanel(s);
     }
   }
+  events.on('phangs:measurements', update);
   events.on('phangs:ready', c => { catalogue = c; failed = !c; update(); });
   events.on('state', ({ changed }) => { if (changed.some(k => ['phangs', 'overlays'].includes(k))) update(); });
   update();

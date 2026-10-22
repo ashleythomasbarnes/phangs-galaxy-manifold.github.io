@@ -758,7 +758,7 @@ export function initInspector(app, mount, ui) {
     body.scrollTop = 0;
     setOpen(true);
     im.load('dss', false);
-    reveal(row);
+    if (store.get().presentation !== 'table') reveal(row);
   });
   app.events.on('phangs:closed', () => {
     inspectedPhangs = null;

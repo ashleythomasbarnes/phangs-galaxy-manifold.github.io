@@ -1,6 +1,6 @@
 // Name search belongs to the independent PHANGS catalogue, never the SDSS row mask.
 import { h, floatLayer, reducedMotion } from './dom.js';
-import { matchesPhangsSurveys } from '../data/surveys.js';
+import { matchesPhangsSelection, phangsTableContext } from '../data/phangs-table.js';
 
 export function normalizeGalaxyName(name) {
   return String(name || '').toLowerCase().replace(/\d+/g, n => n.replace(/^0+(?=\d)/, '')).replace(/[^a-z0-9]/g, '');
@@ -24,12 +24,12 @@ export function searchGalaxyNames(rows, query) {
 }
 
 export function galaxySearchStatus(app, row) {
-  const filtered = !matchesPhangsSurveys(row, app.store.get().phangs?.surveys || {});
+  const filtered = !matchesPhangsSelection(row, app.store.get().phangs, phangsTableContext(app));
   const point = app.overlays?.phangs?.project(row);
   const axesLoading = !app.data.loaded;
   const unsupported = !point || !Number.isFinite(point.X) || !Number.isFinite(point.Y) || point.vis < 0.01;
   const notes = [];
-  if (filtered) notes.push('Hidden by observation filters');
+  if (filtered) notes.push(app.store.get().phangs?.columnFilters?.length ? 'Hidden by PHANGS filters' : 'Hidden by observation filters');
   if (axesLoading) notes.push('Loading plot axes');
   else if (unsupported) notes.push('Unavailable on current axes');
   else if (point.vis < 0.999) notes.push('Faded: some axis measurements missing');
@@ -75,7 +75,7 @@ export function initGalaxySearch(app, mount, ui) {
     const state = galaxySearchStatus(app, row);
     app.actions.setOverlay('phangs', true);
     app.overlays?.phangs?.inspect(row);
-    if (state.canPan) app.camera.set({ cx: state.point.X, cy: state.point.Y }, { duration: reducedMotion() ? 0 : 380 });
+    if (state.canPan && app.store.get().presentation !== 'table') app.camera.set({ cx: state.point.X, cy: state.point.Y }, { duration: reducedMotion() ? 0 : 380 });
     input.value = row.name.toUpperCase();
     close();
     input.blur();

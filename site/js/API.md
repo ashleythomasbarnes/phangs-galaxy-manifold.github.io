@@ -24,6 +24,22 @@ DSS tiles, requested lazily after camera motion settles. Links encode this as
 also disable this toggle. Image picking passes through the stage interaction so
 pan, zoom and lasso still work across tiles; SDSS Glow/Mosaic stays independent.
 
+The catalogue table uses `store.presentation` (`plot` or `table`), separate from
+SDSS `store.mode`. `store.tableSort` is `{key, direction: 'asc'|'desc'}`; the default
+is ascending `name`. `store.phangs.columnFilters` is a replacement array of
+`{key, presence?, min?, max?, text?, values?}`. Use `normalizeColumnFilters()`
+from `data/phangs-table.js` before storing external input. Inclusive numeric bounds,
+case-insensitive text and categorical OR compose with AND across columns and surveys.
+`presence` is `missing` or `present`; omit it for unrestricted availability.
+`matchesPhangsSelection(row, state.phangs, phangsTableContext(app))` is shared by
+markers, region hosts, search and selected counts. Table rows do not depend on
+projection visibility or the PHANGS overlay toggle. Individual chip tallies remain
+survey coverage counts. `nebulae.summary(name)`, `nebulae.catalogue` and
+`nebulae.summaryError` expose the already-loaded MUSE summary; no region fetch is
+needed for table mode. Pending/failed MUSE data do not satisfy MUSE column filters.
+Links use `phv=table`, `phts`/`phtd` for sorting and `phcf` for normalized JSON filters.
+Entering the table stops tour/camera motion without changing the current frame.
+
 The observations rail owns the PHANGS visibility toggle. Plot controls are
 contextual: size controls require `logR50` or `logSigma`, MUSE controls require
 one of its four shared nebular dimensions. Neither panel appears on global-only
