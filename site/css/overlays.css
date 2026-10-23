@@ -9,7 +9,7 @@
   background: var(--bg-2);
   border: 1px solid var(--hair-25);
   border-radius: var(--r-sm);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .25);
+  box-shadow: 0 4px 16px rgb(var(--shadow-rgb) / calc(.25 * var(--shadow-k)));
   font-size: 12px;
   color: var(--cream);
 }
@@ -34,7 +34,7 @@
 .phangs-size-control select { min-width: 0; max-width: 200px; font: 400 10px/1.5 var(--font-ui); border: 1px solid var(--hair-25); border-radius: 4px; color: var(--cream-2); background: var(--bg); }
 .phangs-size-control[hidden], .phangs-size-note[hidden], .phangs-sigma-note[hidden] { display: none; }
 .phangs-nebula-controls { margin-top: 7px; border-top: 1px solid var(--hair-15); padding-top: 6px; }
-.phangs-nebula-controls > summary { cursor: pointer; font-size: 11px; color: #e8b85c; }
+.phangs-nebula-controls > summary { cursor: pointer; font-size: 11px; color: var(--nebula); }
 .phangs-nebula-controls label { margin-top: 6px; justify-content: space-between; }
 .phangs-nebula-controls label > span { margin-left: 0; }
 .phangs-nebula-controls select { min-width: 0; max-width: 180px; font: 400 11px/1.5 var(--font-ui); border: 1px solid var(--hair-25); border-radius: 4px; color: var(--cream-2); background: var(--bg); }
@@ -45,11 +45,11 @@
 .phangs-nebula-details small { display: block; }
 .phangs-marker, .phangs-counterpart {
   position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
-  border: 2px solid #7de2d1; border-radius: 50%; background: #0b0e1340;
+  border: 2px solid var(--phangs); border-radius: 50%; background: rgb(var(--bg-rgb) / 0.25);
   padding: 0; pointer-events: auto; cursor: pointer;
 }
 .phangs-marker:hover, .phangs-marker:focus-visible { outline: 2px solid var(--cream); outline-offset: 3px; }
-.phangs-marker.phangs-image { left: -24px; top: -24px; width: 48px; height: 48px; border-radius: 6px; box-shadow: 0 2px 8px #0009; pointer-events: none; }
+.phangs-marker.phangs-image { left: -24px; top: -24px; width: 48px; height: 48px; border-radius: 6px; box-shadow: 0 2px 8px rgb(var(--shadow-rgb) / calc(0.60 * var(--shadow-k))); pointer-events: none; }
 .phangs-image > img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4px; pointer-events: none; }
 .phangs-marker > img[hidden] { display: none; }
 .phangs-image:focus-visible { z-index: 3 !important; }
@@ -57,10 +57,10 @@
 .con-phangs-images { display: grid; place-items: center; gap: 2px; width: 39px; min-height: 34px; padding: 3px 2px; border: 1px solid var(--hair-25); border-radius: 8px; }
 .con-phangs-images .i { display: block; width: 17px; height: 17px; }
 .con-phangs-images small { font: 400 5.5px/1 var(--font-display); letter-spacing: .02em; }
-.con-phangs-images[aria-pressed="true"] { color: #7de2d1; border-color: #7de2d1; background: #7de2d119; }
+.con-phangs-images[aria-pressed="true"] { color: var(--phangs); border-color: var(--phangs); background: color-mix(in srgb, var(--phangs) 10%, transparent); }
 .con-phangs-images:disabled { opacity: .4; cursor: default; }
-.phangs-marker .phangs-name { position: absolute; top: 13px; left: 8px; white-space: nowrap; color: #7de2d1; background: #0b0e13e6; padding: 2px 4px; font-size: 11px; pointer-events: none; }
-.phangs-counterpart { left: -9px; top: -9px; width: 18px; height: 18px; border-color: #fff; pointer-events: none; }
+.phangs-marker .phangs-name { position: absolute; top: 13px; left: 8px; white-space: nowrap; color: var(--phangs); background: rgb(var(--bg-rgb) / 0.9); padding: 2px 4px; font-size: 11px; pointer-events: none; }
+.phangs-counterpart { left: -9px; top: -9px; width: 18px; height: 18px; border-color: var(--mark); pointer-events: none; }
 .phangs-properties { margin-top: 18px; font-size: 12px; }
 .phangs-properties h4 { margin-bottom: 5px; }
 .phangs-properties p { margin: 5px 0; overflow-wrap: anywhere; }
@@ -75,7 +75,7 @@
 .phangs-chip-group { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 9px 0; }
 .phangs-chip-heading { width: 100%; font: 400 9px/1.5 var(--font-mono); color: var(--cream-3); }
 .phangs-chip { padding: 4px 7px; border: 1px solid var(--hair-25); border-radius: var(--r-pill); color: var(--cream-2); background: var(--bg-2); font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
-.observations .phangs-chip { color: #7de2d1; border-color: rgba(125, 226, 209, .3); background: rgba(125, 226, 209, .07); }
+.observations .phangs-chip { color: var(--phangs); border-color: color-mix(in srgb, var(--phangs) 30%, transparent); background: color-mix(in srgb, var(--phangs) 7%, transparent); }
 .observations .phangs-chip.awaiting { background: transparent; border-style: dashed; }
 .phangs-strip-note { margin: 9px 0; font-size: 10px; color: var(--cream-3); }
 .phangs-note { font-size: 10px; opacity: .75; }
@@ -118,7 +118,7 @@
   letter-spacing: 0.05em;
   white-space: nowrap;
   color: var(--mustard);
-  background: rgba(11, 14, 19, 0.6);
+  background: rgb(var(--bg-rgb) / 0.6);
   text-decoration: none;
   pointer-events: auto;
   cursor: pointer;
@@ -136,7 +136,7 @@
 }
 .ov-layer .ov-lit:hover,
 .ov-layer .ov-lit:focus-visible {
-  color: #f4d27a;
+  color: var(--mustard-hi);
   background: rgba(226, 178, 58, 0.14);
   box-shadow: 0 0 0 1px rgba(226, 178, 58, 0.5);
   outline: none;
@@ -155,7 +155,7 @@
   outline: 1px solid var(--hair-15);
   outline-offset: 2px;
   background: var(--bg-2);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 28px rgb(var(--shadow-rgb) / calc(0.5 * var(--shadow-k)));
   color: var(--cream);
   pointer-events: none;
 }

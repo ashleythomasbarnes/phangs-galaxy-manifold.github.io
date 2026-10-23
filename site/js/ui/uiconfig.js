@@ -1,7 +1,7 @@
 // UI-only configuration: rail group order, category token names, legend chip glyphs, the
 // color-cycle order for the `C` key, and small helpers that read the app config.
 
-import { groupColor } from '../config/style.js';
+import { groupVar } from '../config/style.js';
 
 /** Rail group order (DESIGN.md §3.1); unknown groups follow in manifest order. */
 export const GROUP_ORDER = ['stars', 'sf', 'chem', 'struct', 'kin', 'gas', 'dust', 'env', 'lines', 'obs', 'learned'];
@@ -51,7 +51,7 @@ export const COLOR_CYCLE = [
 ];
 
 export function dimColor(d) {
-  return groupColor(d.group);
+  return groupVar(d.group);
 }
 
 /** Order the dims into rail groups: [{group, color, dims:[DimSpec]}]. */
@@ -65,7 +65,7 @@ export function groupedDims(dims) {
     const ia = GROUP_ORDER.indexOf(a), ib = GROUP_ORDER.indexOf(b);
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
-  return keys.map((g) => ({ group: g, color: groupColor(g), dims: by.get(g) }));
+  return keys.map((g) => ({ group: g, color: groupVar(g), dims: by.get(g) }));
 }
 
 /** Physical-unit label, e.g. "log M★ [M☉]". */

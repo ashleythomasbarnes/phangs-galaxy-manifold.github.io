@@ -19,10 +19,12 @@ import { initKeys } from './keys.js';
 import { initUrlState } from './urlstate.js?v=2';
 import { closeRadial, radialOpen } from './radial.js';
 import { closeColorPopover, colorPopoverOpen } from './colorpop.js';
+import { initTheme } from './theme.js';
 
 export async function initUI(app) {
   const $ = (id) => document.getElementById(id);
   const ui = { app, literature: [], litConventions: '' };
+  initTheme(app);
   floatLayer();
   initTooltips();
   ui.splash = initSplash(app);

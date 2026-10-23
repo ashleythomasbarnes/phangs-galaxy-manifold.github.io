@@ -16,7 +16,7 @@ import { PRESETS, presetById, availablePresets, DEFAULT_PRESET, ALL_CODES } from
 import { DIM_CONFIG, dimConfig, defaultTourSet, colorRange, formatValue, TOUR_DEFAULT } from './config/dims.js';
 import * as style from './config/style.js';
 
-const { MOTION, CATEGORY_COLORS, NEUTRAL, hexToRgb01 } = style;
+const { MOTION, CATEGORY_COLORS, hexToRgb01 } = style;
 const SETTLE_MS = 150;
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -138,6 +138,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     if (c.startsWith('cat:')) {
       const spec = data.catSpec(c.slice(4));
       if (!spec || spec.slot < 0) return { mode: 'none', key: null };
+      const NEUTRAL = style.NEUTRAL;
       const colors = Array.from({ length: 8 }, () => hexToRgb01(NEUTRAL));
       const hex = Array(8).fill(NEUTRAL);
       for (const e of spec.codes) {
@@ -159,6 +160,11 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     if (!colorCache || colorCache.key !== c) colorCache = { key: c, p: colorParams(c) };
     return colorCache.p;
   }
+  // theme switch (js/ui/theme.js): category colors are rebuilt from the new palette
+  events.on('theme', () => {
+    colorCache = null;
+    requestRender();
+  });
 
   let filterCache = null;
   /**
@@ -212,7 +218,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
       ref: exposure.ref,
       dim: s.mode === 'mosaic' ? (s.render.mosaicDim ?? 0.35) : (s.render.dim ?? 1),
       selection: !!s.selection,
-      bloom: s.render.bloom,
+      bloom: style.THEME.name === 'light' ? 0 : s.render.bloom,   // glow halos muddy paper
     };
   }
 

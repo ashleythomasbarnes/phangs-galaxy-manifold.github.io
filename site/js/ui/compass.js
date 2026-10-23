@@ -9,7 +9,7 @@ import { h, s, clamp, tween, isNarrow } from './dom.js';
 import { icon } from './icons.js';
 import { setTip, hideTip } from './tooltip.js';
 import { createKnob } from './knob.js';
-import { groupColor } from '../config/style.js';
+import { groupVar } from '../config/style.js';
 import { dimTitle, GROUP_NAMES, shortParts } from './uiconfig.js';
 
 const R = 70;            // spoke length of a dimension fully in the plane (SVG units)
@@ -67,7 +67,7 @@ export function initCompass(app, mount, ui) {
 
   // ------------------------------------------------------------------ per-dimension marks
   const marks = data.dims.map((d) => {
-    const color = groupColor(d.group);
+    const color = groupVar(d.group);
     const line = s('line', { class: 'sp-line', x1: '0', y1: '0', x2: '0', y2: '0' });
     const knob = s('circle', { class: 'sp-knob', r: '5.2' });
     const label = svgLabel('sp-label', d.short);

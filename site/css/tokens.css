@@ -25,6 +25,26 @@
   --hair-25: rgba(239, 230, 210, 0.25);
   --hair-35: rgba(239, 230, 210, 0.35);
 
+  /* theme-switchable helpers: ink / background as RGB triplets for rgb(var(--x) / a) */
+  --ink-rgb: 239 230 210;
+  --bg-rgb: 11 14 19;
+  --bg2-rgb: 17 22 31;
+  --shadow-rgb: 0 0 0;
+  --shadow-k: 1;            /* shadow strength (lighter on paper) */
+  --orange-hi: #f08650;
+  --mustard-hi: #f4d27a;
+  --well: #07090d;          /* deep instrument insets */
+  --row-alt: #0e131b;       /* table zebra */
+  --raised-a: #1b2330;      /* raised control gradient (top/bottom) */
+  --raised-b: #151c27;
+  --raised-hi-a: #232c3a;
+  --raised-hi-b: #1a2230;
+  --knob-face: #222c3a;
+  --knob-face-2: #161d28;
+  --phangs: #7de2d1;
+  --nebula: #e8b85c;
+  --mark: #ffffff;
+
   /* dimension groups */
   --g-stars: var(--orange);
   --g-sf: var(--sky);
@@ -74,6 +94,58 @@
   --ease-ui: cubic-bezier(.2, .7, .3, 1);
   --t-view: 1100ms;
   --t-ui: 200ms;
+}
+
+/* Light theme ("paper"): toggled from the top bar (js/ui/theme.js) */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f3eee3;
+  --bg-2: #faf7f0;
+  --bg-3: #e9e2d3;
+  --line: #d3c9b5;
+  --cream: #1f1b15;
+  --cream-2: #4d473b;
+  --cream-3: #766e5c;
+
+  --orange: #c95a22;
+  --mustard: #a87d12;
+  --teal: #23807b;
+  --sky: #3e7bb8;
+  --coral: #c2403a;
+  --olive: #6f7d2c;
+  --plum: #8e5280;
+
+  --hair-15: rgba(31, 27, 21, 0.13);
+  --hair-25: rgba(31, 27, 21, 0.22);
+  --hair-35: rgba(31, 27, 21, 0.32);
+
+  --ink-rgb: 31 27 21;
+  --bg-rgb: 243 238 227;
+  --bg2-rgb: 250 247 240;
+  --shadow-rgb: 60 45 20;
+  --shadow-k: 0.3;
+  --orange-hi: #b04a17;
+  --mustard-hi: #8a6608;
+  --well: #e6dfcf;
+  --row-alt: #f5f1e8;
+  --raised-a: #fdfbf6;
+  --raised-b: #efe9dc;
+  --raised-hi-a: #ffffff;
+  --raised-hi-b: #f3eee3;
+  --knob-face: #fdfbf6;
+  --knob-face-2: #ece5d6;
+  --phangs: #16857a;
+  --nebula: #b07d1a;
+  --mark: #1f1b15;
+
+  --g-gas: #2f8fb0;
+  --g-dust: #8f6233;
+
+  --bpt-1: #3e7bb8; --bpt-2: #6b9fcf; --bpt-3: #23807b; --bpt-4: #c2403a;
+  --bpt-5: #c95a22; --bpt-6: #a87d12; --bpt-7: #807865;
+  --env-1: #1f1b15; --env-2: #a87d12; --env-3: #8e5280;
+  --morph-1: #c2403a; --morph-2: #3e7bb8; --morph-3: #807865;
 }
 
 @media (prefers-reduced-motion: reduce) {

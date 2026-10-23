@@ -34,8 +34,6 @@ const FLOOR = 0.2;          // minimum luminance of an isolated, fully visible g
 const UNSEL_DIM = 0.25;     // unselected light when a selection is active
 const SEL_BOOST = 2.5;      // exposure boost of selected light
 const MEM_BUDGET = 192 * 1024 * 1024;   // bytes for one accumulation target before degrading
-const NEUTRAL_RGB = hexToRgb01(NEUTRAL);
-const SELECTION_RGB = hexToRgb01(SELECTION_COLOR);
 
 /** Quad size factor: the (1 − r²)² kernel's visible (FWHM) diameter is ~0.54 of its quad,
  *  so a quad of 1.5 × pointSize reads as roughly pointSize CSS px. */
@@ -485,6 +483,7 @@ export class Renderer {
     const color = p.color || {};
     gl.uniform1i(u.u_mode, info.cmode);
     gl.uniform1f(u.u_lutV, (colormapRow(color.cmap) + 0.5) / this.lutRows);
+    const NEUTRAL_RGB = hexToRgb01(NEUTRAL);   // live theme colors (config/style.js)
     const cat = this._cat;
     for (let c = 0; c < 8; c++) {
       const rgb = (color.colors && color.colors[c]) || NEUTRAL_RGB;
@@ -492,7 +491,7 @@ export class Renderer {
     }
     gl.uniform3fv(u.u_cat, cat);
     gl.uniform3fv(u.u_neutral, NEUTRAL_RGB);
-    gl.uniform3fv(u.u_selColor, SELECTION_RGB);
+    gl.uniform3fv(u.u_selColor, hexToRgb01(SELECTION_COLOR));
     gl.uniform1f(u.u_gain, p.gain > 0 ? p.gain : 1);
     gl.uniform1f(u.u_invRef, 1 / Math.max(1e-6, p.ref || 1));
     gl.uniform1f(u.u_gamma, GAMMA);

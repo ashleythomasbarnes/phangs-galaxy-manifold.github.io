@@ -6,7 +6,7 @@ import { h, fmtInt } from './dom.js';
 import { focusQuietly } from './tooltip.js';
 import { icon, starburstMark } from './icons.js';
 import { groupedDims, dimTitle, GROUP_NAMES, shortKids } from './uiconfig.js';
-import { groupColor } from '../config/style.js';
+import { groupVar } from '../config/style.js';
 
 const CAVEATS_FALLBACK = [
   'The sample is flux-limited (r < 17.77), so scaling relations show Malmquist bias. Filter in z to explore it.',
@@ -64,7 +64,7 @@ export function initAbout(app, ui) {
       const i = data.dimIndex(part);
       if (i < 0) return part;
       const d = data.dims[i];
-      return h('span', { class: 'ab-dimref', style: { '--gc': groupColor(d.group) }, title: dimTitle(d), text: d.label });
+      return h('span', { class: 'ab-dimref', style: { '--gc': groupVar(d.group) }, title: dimTitle(d), text: d.label });
     });
   }
 

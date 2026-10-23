@@ -2,6 +2,7 @@
 // Individual points use the shared canvas and click/hover hooks, never thousands of DOM nodes.
 import { h } from '../../ui/dom.js';
 import { fadeFactors } from '../../math/frame.js';
+import { COLORS } from '../../config/style.js';
 import { NEBULA_KEYS, NEBULA_DISPLAYS, NEBULA_SUMMARIES, NEBULA_LABELS,
   nebulaOptions, hasNebulaAxes, nebulaValues, nebulaRow } from '../../data/nebulae.js';
 
@@ -126,7 +127,7 @@ export function createNebulae(app, ov, { hosts, baseValues, project, matches = (
       ctx.beginPath();
       ctx.rect(plot.l, plot.t, plot.r - plot.l, plot.b - plot.t);
       ctx.clip();
-      ctx.fillStyle = '#e8b85c';
+      ctx.fillStyle = COLORS.nebula;
       for (const { host, entries } of groups) {
         if (!matches(host)) continue;
         matching += entries.length;
@@ -149,7 +150,7 @@ export function createNebulae(app, ov, { hosts, baseValues, project, matches = (
           ctx.fillRect(x - 1.25, y - 1.25, 2.5, 2.5);
           if (selected()?.nebula === region) {
             ctx.globalAlpha = vis;
-            ctx.strokeStyle = '#fff';
+            ctx.strokeStyle = COLORS.mark;
             ctx.lineWidth = 1.5;
             ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.stroke();
           }

@@ -14,7 +14,7 @@
 .tb-info-button { display: grid; place-items: center; gap: 2px; min-width: 34px; padding: 4px 3px; border: 1px solid transparent; border-radius: 6px; color: var(--cream-2); background: transparent; cursor: pointer; }
 .tb-info-button .i { width: 17px; height: 17px; display: block; }
 .tb-info-button small { font: 400 6px/1.2 var(--font-mono); letter-spacing: .04em; }
-.tb-phangs-info { color: #7de2d1; }
+.tb-phangs-info { color: var(--phangs); }
 .tb-info-button:hover { background: var(--bg-2); border-color: var(--hair-25); color: var(--cream); }
 .tb-info-button:focus-visible { outline: 1.5px solid var(--orange); outline-offset: 2px; }
 .gm-splash-word { display: grid; gap: 13px; justify-items: center; letter-spacing: .35em; opacity: 1; }
