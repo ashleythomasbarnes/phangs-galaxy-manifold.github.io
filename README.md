@@ -9,9 +9,10 @@ You can rotate the projection by hand, let it rotate on its own, or jump to a kn
 ## What you can do
 
 - Open a PHANGS observation chip on the left to filter by survey, observation status or ALMA array configuration. Selections across surveys must all match.
+- The page opens on **Table → Global**. Use **Table / Plot** in the header to switch views. Global, Sizes, Morphology, Observations and MUSE provide focused column sets; **Columns** exposes every field. **Filters** searches all properties, including hidden columns. Column headings sort rows; galaxy names open the inspector. Filters and custom columns are included in copied links.
 - Toggle PHANGS points at the top of the observations rail. Size and MUSE controls appear in the plot only when their axes contribute to the view.
 - Use the PHANGS image button beside Glow/Mosaic to replace galaxy markers with DSS tiles. Tiles follow the observation filters and plotted positions; click one to inspect it. The choice is included in shared links.
-- Search PHANGS names or aliases in the header, then select a result to inspect it. Filtered galaxies and unavailable axis measurements are identified in the results.
+- Filter PHANGS names or aliases in the header. The search and survey/property filters refine the same sample in both views. Remove individual filter chips or use **Clear all** to restore the sample; sorting, columns and MUSE methods stay unchanged.
 - Open the labelled PHANGS information button for sample definitions and sources, or SDSS for the reference data, credits and shortcuts.
 - Press Space to start or pause a slow random rotation.
 - Open **Views** for all projections. There are 14 views, including the mass-metallicity relation (MZR), the fundamental metallicity relation (FMR), the star-forming main sequence, the mass-size relation, the edge-on fundamental plane, the BPT diagram, and the stellar-to-halo mass relation.

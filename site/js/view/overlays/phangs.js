@@ -1,12 +1,13 @@
 // Independent comparison sample: never inserted into the SDSS rows or selection mask.
 import { fadeFactors } from '../../math/frame.js';
 import { h } from '../../ui/dom.js';
+import { COLORS } from '../../config/style.js';
 import { phangsValues, phangsImageUrl } from '../../data/phangs.js?v=3';
-import { PHANGS_SURVEYS, ALMA_ARRAYS, ALMA_PROGRAMS, matchesPhangsSurveys } from '../../data/surveys.js?v=2';
+import { matchesPhangsSelection, phangsTableContext } from '../../data/phangs-table.js';
+import { PHANGS_SURVEYS, ALMA_ARRAYS, ALMA_PROGRAMS } from '../../data/surveys.js?v=2';
 import { createNebulae } from './nebulae.js';
 import { phangsDataChips } from '../../ui/phangs-chips.js?v=2';
 
-export const PHANGS_COLOR = '#7de2d1';
 
 /** Size-dependent comparisons also matter in mixed/rotating projections. */
 export function hasPhangsSizeAxes(dims, F) {
@@ -62,7 +63,7 @@ export function createPhangs(app, ov) {
   markers.append(ring);
   const enabled = () => app.store.get().overlays.phangs !== false;
   const surveyFilters = () => app.store.get().phangs?.surveys || {};
-  const matches = row => matchesPhangsSurveys(row, surveyFilters());
+  const matches = row => matchesPhangsSelection(row, app.store.get().phangs, phangsTableContext(app));
   const sizeMode = () => app.store.get().phangs?.sizeMode || 'none';
   const values = row => nebulae.values(row, phangsValues(row, sizeMode()));
   const imagesEnabled = () => app.store.get().phangs?.images === true && data.manifest?.host?.externalImages !== false;
@@ -75,8 +76,8 @@ export function createPhangs(app, ov) {
   details.addEventListener('pointerenter', clearSDSSHover);
   const nebulae = createNebulae(app, ov, {
     hosts: () => catalogue?.galaxies || [], baseValues: row => phangsValues(row, sizeMode()),
-    project: projectPhangs, inspect, selected: () => selected,
-    changed: () => { renderDetails(); app.events.emit('phangs:measurements'); ov.invalidate(); },
+    project: projectPhangs, matches, inspect, selected: () => selected,
+    changed: () => { if (selected && !matches(selected)) close(); renderDetails(); app.events.emit('phangs:measurements'); ov.invalidate(); },
   });
   controls.append(nebulae.controls);
 
@@ -267,7 +268,7 @@ export function createPhangs(app, ov) {
       const program = s.id === 'alma' ? ALMA_PROGRAMS.find(p => p.id === f.program)?.label : null;
       return `${s.label}${program ? ` · ${program}` : ''}${array ? ` (${array})` : ''}`;
     }).join(' + ');
-    const markerColor = activeSurveys.length === 1 ? activeSurveys[0].color : activeSurveys.length > 1 ? '#efe6d2' : PHANGS_COLOR;
+    const markerColor = activeSurveys.length === 1 ? activeSurveys[0].color : activeSurveys.length > 1 ? COLORS.cream : COLORS.phangs;
     const images = imagesEnabled();
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i], { button, label } = node, row = catalogue.galaxies[i];
@@ -303,7 +304,7 @@ export function createPhangs(app, ov) {
       if (show) {
         visible++;
         button.style.borderColor = markerColor;
-        button.style.background = activeSurveys.length ? markerColor + '55' : '#0b0e1340';
+        button.style.background = activeSurveys.length ? markerColor + '55' : COLORS.bg + '40';
         button.style.transform = `translate(${x}px,${y}px)`;
         button.style.opacity = p.vis;
         button.style.zIndex = selected === row ? '2' : '';

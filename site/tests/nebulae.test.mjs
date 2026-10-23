@@ -7,6 +7,8 @@ import { Dataset } from '../js/data/loader.js';
 import { frameFromCombos } from '../js/math/frame.js';
 import { createPhangs, projectPhangs } from '../js/view/overlays/phangs.js';
 import { nebulaOptions, nebulaValues, nebulaRow, hasNebulaAxes, NEBULA_KEYS } from '../js/data/nebulae.js';
+import { matchesPhangsSelection, phangsTableContext } from '../js/data/phangs-table.js';
+import { galaxySearchStatus } from '../js/ui/search.js';
 import { initUrlState } from '../js/ui/urlstate.js';
 import { Interaction } from '../js/view/interaction.js';
 
@@ -58,6 +60,7 @@ function fixture(t, fail = '', regionResponse = regions) {
   let drawn = 0;
   const ctx = { save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, fillRect() { drawn++; }, arc() {}, stroke() {} };
   const api = createPhangs(app, ov);
+  app.overlays = { phangs: api };
   const text = node => [node.textContent || '', ...node.children?.map(text) || []].join(' ');
   return { app, api, ov, ctx, calls, selection, text,
     hover: point => point ? hovers.some(fn => fn(point)) : hovers.forEach(fn => fn(null)),
@@ -233,18 +236,32 @@ test('shared links restore nebular options and old links retain defaults', async
   f.app.camera.set = () => {};
   f.app.camera.fitBounds = () => {};
   const url = initUrlState(f.app, {});
-  f.app.store.set({ phangs: { nebulaDisplay: 'both', nebulaSummary: 'median', images: true } });
+  f.app.store.set({ presentation: 'table', tablePreset: 'muse', tableColumns: { muse: ['name', 'muse_EBV'] }, tableSort: { key: 'logM', direction: 'desc' },
+    phangs: { nameQuery: 'M 74', nebulaDisplay: 'both', nebulaSummary: 'median', images: true, columnFilters: [{ key: 'logM', min: 10 }] } });
   const encoded = url.encode();
   assert.match(encoded, /phnd=both/);
   assert.match(encoded, /phnm=median/);
   assert.match(encoded, /phi=1/);
+  assert.match(encoded, /phg=muse/);
+  assert.match(encoded, /phq=M\+74/);
   url.restore('#' + encoded);
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'both', summary: 'median' });
   assert.equal(f.app.store.get().phangs.images, true);
+  assert.equal(f.app.store.get().presentation, 'table');
+  assert.equal(f.app.store.get().tablePreset, 'muse');
+  assert.deepEqual(f.app.store.get().tableColumns.muse, ['name', 'muse_EBV']);
+  assert.equal(f.app.store.get().phangs.nameQuery, 'M 74');
+  assert.deepEqual(f.app.store.get().tableSort, { key: 'logM', direction: 'desc' });
+  assert.deepEqual(f.app.store.get().phangs.columnFilters, [{ key: 'logM', min: 10 }]);
   url.restore('#c=-&phnd=bogus&phnm=bogus');
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'summary', summary: 'mean' });
   url.restore('#c=-');
   assert.equal(f.app.store.get().phangs.images, false);
+  assert.equal(f.app.store.get().presentation, 'plot');
+  assert.equal(f.app.store.get().tablePreset, 'global');
+  assert.equal(f.app.store.get().phangs.nameQuery, '');
+  assert.deepEqual(f.app.store.get().tableSort, { key: 'name', direction: 'asc' });
+  assert.deepEqual(f.app.store.get().phangs.columnFilters, []);
   assert.deepEqual(nebulaOptions(f.app.store.get().phangs), { display: 'summary', summary: 'mean' });
 });
 
@@ -294,4 +311,49 @@ test('pan and lasso gestures never invoke the region click handler', () => {
   interaction._onUp(event(30, 30));
   assert.equal(lasso, 3);
   assert.equal(clicks, 0);
+});
+
+
+test('column selection agrees across galaxy markers, counts, region hosts and search', async t => {
+  const f = fixture(t);
+  await Promise.all([f.api.ready, f.api.nebulae.ready]);
+  f.app.store.set({ phangs: { nebulaDisplay: 'both', columnFilters: [{ key: 'logM', min: 10 }] } });
+  await f.api.nebulae.loadRegions();
+  let counts;
+  f.app.events.on('phangs:count', value => { counts = value; });
+  f.api.draw(f.ctx);
+  const context = phangsTableContext(f.app);
+  const selected = phangs.galaxies.filter(r => matchesPhangsSelection(r, f.app.store.get().phangs, context));
+  assert.equal(counts.matching, selected.length);
+  const names = new Set(selected.map(r => r.name));
+  assert.equal(f.api.nebulae.stats.matching, regions.regions.filter(r => names.has(r.galaxy)).length);
+  for (const row of phangs.galaxies) {
+    assert.equal(galaxySearchStatus(f.app, row).text.includes('Hidden by PHANGS filters'), !names.has(row.name));
+    if (!names.has(row.name)) {
+      const marker = f.ov.layer.children[0].children.find(el => el['aria-label'] === `Inspect PHANGS galaxy ${row.name.toUpperCase()}`);
+      assert.equal(marker.hidden, true);
+    }
+  }
+  f.api.inspect(selected[0]);
+  f.app.store.set({ phangs: { columnFilters: [{ key: 'logM', min: 100 }] } });
+  assert.equal(f.api.selected, null);
+  f.api.draw(f.ctx);
+  assert.equal(f.api.nebulae.stats.visible, 0);
+  assert.equal(f.api.nebulae.pick(f.point.sx, f.point.sy), null);
+  assert.equal(counts.matching, 0);
+  assert.equal(f.app.store.get().selection, f.selection);
+  f.app.store.set({ phangs: { columnFilters: [{ key: 'muse_OH_PP04', min: 8.7 }], nebulaSummary: 'summed' } });
+  f.api.draw(f.ctx);
+  assert.equal(counts.matching, phangs.galaxies.filter(r => matchesPhangsSelection(r, f.app.store.get().phangs, phangsTableContext(f.app))).length);
+  f.app.store.set({ phangs: { columnFilters: [] } });
+  f.api.draw(f.ctx);
+  assert.equal(counts.matching, phangs.galaxies.length);
+  assert.equal(f.api.nebulae.stats.matching, regions.regions.length);
+  f.app.store.set({ phangs: { nameQuery: 'M 74' } });
+  f.api.draw(f.ctx);
+  assert.equal(counts.matching, 1);
+  assert.equal(f.api.nebulae.stats.matching, regions.regions.filter(r => r.galaxy === 'ngc0628').length);
+  f.app.store.set({ phangs: { nameQuery: '' } });
+  f.api.draw(f.ctx);
+  assert.equal(counts.matching, phangs.galaxies.length);
 });

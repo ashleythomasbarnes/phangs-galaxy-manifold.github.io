@@ -5,6 +5,7 @@ import { icon, starburstMark } from './icons.js';
 import { setTip } from './tooltip.js';
 import { initPresets } from './presets.js';
 import { initGalaxySearch } from './search.js';
+import { getTheme, setTheme } from './theme.js';
 
 export function initHeader(app, mount, ui) {
   mount.replaceChildren();
@@ -32,6 +33,7 @@ export function initHeader(app, mount, ui) {
 
   const searchMount = h('div', { class: 'tb-search' });
   const search = initGalaxySearch(app, searchMount, ui);
+  const viewMount = h('div', { class: 'tb-presentation' });
   const carts = h('div', { class: 'tb-carts' });
   const about = h('button', { class: 'tb-about tb-info-button', type: 'button', 'aria-label': 'SDSS information, credits and shortcuts' },
     h('span', { html: icon('info') }), h('small', { text: 'SDSS' }));
@@ -42,10 +44,34 @@ export function initHeader(app, mount, ui) {
   about.addEventListener('click', () => { ui.closeMenus(); ui.phangsInfo?.hide(); ui.about?.toggle(); });
   phangsAbout.addEventListener('click', () => { ui.closeMenus(); ui.about?.hide(); ui.phangsInfo?.toggle(); });
 
+  // light / dark toggle: shows the mode it switches to
+  const themeIcon = h('span');
+  const themeLabel = h('small');
+  const themeBtn = h('button', { class: 'tb-info-button tb-theme', type: 'button' }, themeIcon, themeLabel);
+  function syncTheme() {
+    const light = getTheme() === 'light';
+    themeIcon.innerHTML = icon(light ? 'moon' : 'sun');
+    themeLabel.textContent = light ? 'DARK' : 'LIGHT';
+    themeBtn.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
+  }
+  setTip(themeBtn, () => ({ title: getTheme() === 'light' ? 'Dark mode' : 'Light mode', sub: 'Switch the color theme' }), 'bottom');
+  themeBtn.addEventListener('click', () => {
+    setTheme(getTheme() === 'light' ? 'dark' : 'light', app);
+    syncTheme();
+  });
+  syncTheme();
+
   mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge), searchMount,
-    h('div', { class: 'tb-actions' }, carts, h('div', { class: 'tb-info-buttons' }, phangsAbout, about))));
+    h('div', { class: 'tb-actions' }, viewMount, carts, h('div', { class: 'tb-info-buttons' }, themeBtn, phangsAbout, about))));
 
   const presets = initPresets(app, carts, ui);
+
+  function syncPresentation() {
+    carts.hidden = app.store.get().presentation === 'table';
+    if (carts.hidden) presets.close();
+  }
+  app.events.on('state', ({ changed }) => { if (changed.includes('presentation')) syncPresentation(); });
+  syncPresentation();
 
   // live count of galaxies in view (vis ≥ 50%, filters included), refreshed at each settle
   let last = -1;
@@ -72,5 +98,5 @@ export function initHeader(app, mount, ui) {
     if (changed.includes('tour')) mount.classList.toggle('touring', !!state.tour.playing);
   });
 
-  return { presets, about, phangsAbout, search, recount };
+  return { presets, about, phangsAbout, search, recount, viewMount };
 }

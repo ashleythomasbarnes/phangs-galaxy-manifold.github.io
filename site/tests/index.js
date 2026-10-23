@@ -4,6 +4,8 @@
 import('./frame.test.mjs');
 import('./overlays.test.mjs');
 import('./phangs.test.mjs');
+import('./phangs-table.test.mjs');
+import('./phangs-table-ui.test.mjs');
 import('./nebulae.test.mjs');
 import('./search.test.mjs');
 import('./phangs-info.test.mjs');

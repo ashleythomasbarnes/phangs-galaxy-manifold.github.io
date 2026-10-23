@@ -8,6 +8,7 @@ import { initTooltips } from './tooltip.js';
 import { initSplash } from './splash.js';
 import { createDnd } from './dnd.js';
 import { initHeader } from './header.js?v=2';
+import { initPhangsTable } from './phangs-table.js';
 import { initRail } from './rail.js?v=2';
 import { initConsole } from './console.js';
 import { initInspector } from './inspector.js?v=2';
@@ -18,10 +19,12 @@ import { initKeys } from './keys.js';
 import { initUrlState } from './urlstate.js?v=2';
 import { closeRadial, radialOpen } from './radial.js';
 import { closeColorPopover, colorPopoverOpen } from './colorpop.js';
+import { initTheme } from './theme.js';
 
 export async function initUI(app) {
   const $ = (id) => document.getElementById(id);
   const ui = { app, literature: [], litConventions: '' };
+  initTheme(app);
   floatLayer();
   initTooltips();
   ui.splash = initSplash(app);
@@ -47,6 +50,7 @@ export async function initUI(app) {
       closeColorPopover();
       closed = true;
     }
+    closed = ui.table?.closePanel() || closed;
     closed = ui.rail?.close() || closed;
     closed = ui.header?.presets.close() || closed;
     closed = ui.header?.search.close() || closed;
@@ -64,6 +68,7 @@ export async function initUI(app) {
 
   ui.dnd = step('dnd', () => createDnd(app, ui));
   ui.header = step('header', () => initHeader(app, $('topbar'), ui));
+  ui.table = step('PHANGS table', () => initPhangsTable(app, ui));
   ui.rail = step('rail', () => initRail(app, $('rail'), ui));
   ui.console = step('console', () => initConsole(app, $('console'), ui));
   ui.inspector = step('inspector', () => initInspector(app, $('inspector'), ui));

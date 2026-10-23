@@ -12,7 +12,7 @@ import { createZFilter } from './zfilter.js';
 import { openColorPopover, closeColorPopover } from './colorpop.js';
 import { catToken, chipFor, dimTitle, catCounts, catMissing, shortKids } from './uiconfig.js';
 import { sampleColormapHex } from '../gl/colormaps.js';
-import { CATEGORY_COLORS, NEUTRAL, groupColor } from '../config/style.js';
+import { CATEGORY_COLORS, NEUTRAL, groupVar } from '../config/style.js';
 
 export function initConsole(app, mount, ui) {
   const { data, store, actions, config } = app;
@@ -121,7 +121,7 @@ export function initConsole(app, mount, ui) {
     colorGroup.dataset.mode = c.mode;
     if (c.mode === 'continuous') {
       dialSym.replaceChildren(...shortKids(c.spec.short));
-      dial.style.setProperty('--gc', groupColor(c.spec.group));
+      dial.style.setProperty('--gc', groupVar(c.spec.group));
       cbar.querySelector('.cbar-grad').style.background = `linear-gradient(90deg, ${[0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1].map((t) => sampleColormapHex(c.cmap, t, c.reverse)).join(', ')})`;
       cbar.querySelector('.cbar-lo').textContent = config.dims.format(c.spec.key, c.range[0]);
       cbar.querySelector('.cbar-hi').textContent = config.dims.format(c.spec.key, c.range[1]);
@@ -367,6 +367,7 @@ export function initConsole(app, mount, ui) {
     }
   }
   app.events.on('state', ({ changed }) => sync(changed));
+  app.events.on('theme', () => sync());
   sync();
 
   return {

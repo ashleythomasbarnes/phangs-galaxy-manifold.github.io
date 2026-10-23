@@ -5,7 +5,7 @@
 .pgi-eyebrow { font: 400 9px/1.4 var(--font-display); letter-spacing: .16em; color: var(--cream-3); text-transform: uppercase; }
 .pgi-content > section, .pgi-panel > section { margin-top: 26px; }
 .pgi-methods { margin-top: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--hair-25); color: var(--cream-2); font: 400 12px/1.5 var(--font-ui); }
-.pgi-methods > summary { cursor: pointer; color: #7de2d1; }
+.pgi-methods > summary { cursor: pointer; color: var(--phangs); }
 .pgi-panel section > p { max-width: 78ch; margin: 10px 0; font: 400 13px/1.55 var(--font-ui); color: var(--cream-2); }
 .pgi-caveats { gap: 11px; }
 .pgi-caveats li { padding-left: 13px; border-left: 2px solid var(--hair-25); }

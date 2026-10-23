@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Emitter } from '../js/events.js';
+import { Store } from '../js/state.js';
+import { matchesPhangsSelection } from '../js/data/phangs-table.js';
 import { normalizeGalaxyName, searchGalaxyNames, galaxySearchStatus, initGalaxySearch } from '../js/ui/search.js';
 
 const rows = [
@@ -35,122 +37,65 @@ test('real PHANGS catalogue resolves NGC 628 and its catalogue alias', () => {
   assert.equal(searchGalaxyNames(catalogue.galaxies, 'UGC 1149')[0].row, canonical[0].row);
 });
 
-function fixture(t, { loading = false, missing = false, filtered = false, beforeOverlays = false } = {}) {
+function fixture(t) {
   class Element {
-    constructor(tag) {
-      this.tagName = tag.toUpperCase(); this.children = []; this.handlers = {}; this.style = {};
-      this.hidden = false; this.value = ''; this.offsetWidth = 310;
-    }
-    setAttribute(k, v) { this[k] = v; if (k === 'hidden') this.hidden = true; }
-    removeAttribute(k) { delete this[k]; }
+    constructor(tag) { this.tagName = tag; this.value = ''; this.children = []; this.handlers = {}; }
+    setAttribute(k, v) { this[k] = v; }
     append(...children) { this.children.push(...children); }
-    replaceChildren(...children) { this.children = children; }
-    addEventListener(k, f) { (this.handlers[k] ||= []).push(f); }
-    dispatch(k, props = {}) {
-      const e = { target: this, preventDefault() { this.defaultPrevented = true; }, stopPropagation() {}, ...props };
-      for (const fn of this.handlers[k] || []) fn(e);
-      return e;
-    }
-    contains(el) { return el === this || this.children.some(c => c.contains?.(el)); }
-    getBoundingClientRect() { return { left: 500, bottom: 40 }; }
-    blur() { this.blurred = true; }
+    addEventListener(k, f) { this.handlers[k] = f; }
+    focus() { this.focused = true; }
   }
-  const oldDocument = globalThis.document, oldWindow = globalThis.window, oldNode = globalThis.Node;
-  const body = new Element('body');
+  const globals = { document: globalThis.document, Node: globalThis.Node };
   globalThis.Node = Element;
-  globalThis.document = {
-    body, createElement: tag => new Element(tag), createTextNode: text => ({ text }),
-    getElementById: id => body.children.find(el => el.id === id), addEventListener() {},
-  };
-  globalThis.window = { innerWidth: 1280, innerHeight: 988, addEventListener() {} };
-  t.after(() => { globalThis.document = oldDocument; globalThis.window = oldWindow; globalThis.Node = oldNode; });
-  const catalogue = { galaxies: rows };
-  const state = { phangs: { surveys: filtered ? { alma: { status: 'observed' } } : {} }, overlays: { phangs: false } };
-  const inspected = [], pans = [], changed = [];
-  const app = {
-    data: { loaded: true }, events: new Emitter(), store: { get: () => state },
-    overlays: { phangs: { catalogue: loading ? null : catalogue,
-      project: () => ({ X: 1.5, Y: -.25, vis: missing ? 0 : 1 }), inspect: row => inspected.push(row) } },
-    actions: { setOverlay: (name, on) => { state.overlays[name] = on; changed.push([name, on]); } },
-    camera: { set: (...args) => pans.push(args) },
-  };
-  if (beforeOverlays) delete app.overlays;
-  const mount = new Element('div');
-  const api = initGalaxySearch(app, mount, { closeMenus() {} });
-  const panel = body.children[0].children[0], list = panel.children[2], status = panel.children[1];
-  return { app, api, panel, list, status, state, changed, inspected, pans, catalogue };
+  globalThis.document = { createElement: tag => new Element(tag), createTextNode: text => ({ text }) };
+  t.after(() => Object.assign(globalThis, globals));
+  const events = new Emitter(), store = new Store({ presentation: 'table', phangs: { nameQuery: '', surveys: {}, columnFilters: [] } });
+  store.subscribe((state, changed) => events.emit('state', { state, changed }));
+  const app = { events, store, data: { loaded: true } };
+  const api = initGalaxySearch(app, new Element('div'), { closeMenus() {} });
+  return { app, api, store, selected: () => rows.filter(r => matchesPhangsSelection(r, store.get().phangs)) };
 }
 
-test('header search initialises before the overlays and accepts the later catalogue event', t => {
-  const f = fixture(t, { beforeOverlays: true });
-  assert.equal(f.api.input.placeholder, 'Search galaxy…');
-  f.api.input.dispatch('focus');
-  assert.match(f.status.textContent, /Loading PHANGS/);
-  f.app.overlays = { phangs: { project: () => ({ X: 1, Y: 2, vis: 1 }) } };
-  f.app.events.emit('phangs:ready', f.catalogue);
-  f.api.input.value = 'NGC 628';
-  f.api.input.dispatch('input');
-  assert.equal(f.list.children.length, 1);
-});
-
-test('search exposes loading, unavailable and no-match states', t => {
-  const f = fixture(t, { loading: true });
-  f.api.input.dispatch('focus');
-  assert.match(f.status.textContent, /Loading PHANGS/);
-  f.app.events.emit('phangs:ready', null);
-  assert.match(f.status.textContent, /unavailable/);
-  f.app.events.emit('phangs:ready', f.catalogue);
-  f.api.input.value = 'NoSuchGalaxy';
-  f.api.input.dispatch('input');
-  assert.equal(f.status.textContent, 'No matching PHANGS galaxies.');
-  assert.equal(f.list.children.length, 0);
-  assert.equal(f.api.input['aria-expanded'], 'true');
-  assert.equal(f.api.close(), true);
-  assert.equal(f.api.close(), false);
-  assert.equal(f.api.input['aria-expanded'], 'false');
-});
-
-test('keyboard search navigates results and inspects/recentres without changing axes or filters', t => {
+test('name filter initialises before data and immediately refines the shared sample', t => {
   const f = fixture(t);
-  const originalFilters = f.state.phangs.surveys;
-  f.api.input.value = 'ngc';
-  f.api.input.dispatch('input');
-  f.api.input.dispatch('keydown', { key: 'ArrowDown' });
-  assert.equal(f.api.input['aria-activedescendant'], 'galaxy-search-result-0');
-  f.api.input.dispatch('keydown', { key: 'ArrowDown' });
-  assert.equal(f.api.input['aria-activedescendant'], 'galaxy-search-result-1');
-  f.api.input.dispatch('keydown', { key: 'ArrowUp' });
-  f.api.input.dispatch('keydown', { key: 'Enter' });
-  assert.deepEqual(f.inspected, [rows[0]]);
-  assert.deepEqual(f.changed, [['phangs', true]]);
-  assert.deepEqual(f.pans[0][0], { cx: 1.5, cy: -.25 });
-  assert.equal(f.state.phangs.surveys, originalFilters);
-  assert.equal(f.panel.hidden, true);
-  assert.equal(f.api.input.blurred, true);
+  assert.equal(f.api.input.placeholder, 'Filter name or alias…');
+  f.api.input.value = 'NGC 00628'; f.api.input.handlers.input();
+  assert.deepEqual(f.selected().map(r => r.name), ['ngc0628']);
+  f.store.set({ presentation: 'plot' });
+  assert.deepEqual(f.selected().map(r => r.name), ['ngc0628']);
+  f.api.input.value = 'UGC 1150'; f.api.input.handlers.input();
+  assert.deepEqual(f.selected().map(r => r.name), ['ngc0629']);
 });
 
-test('filtered results remain findable and inspectable with an explicit label, without panning', t => {
-  const f = fixture(t, { filtered: true });
-  f.api.input.value = 'NGC 629';
-  f.api.input.dispatch('input');
-  assert.match(f.list.children[0].children.at(-1).textContent, /Hidden by observation filters/);
-  f.list.children[0].dispatch('click');
-  assert.deepEqual(f.inspected, [rows[1]]);
-  assert.equal(f.pans.length, 0);
-  assert.ok(f.state.phangs.surveys.alma);
+test('name search composes with surveys, zero results and clearing without resetting other filters', t => {
+  const f = fixture(t);
+  f.store.set({ phangs: { surveys: { alma: { status: 'observed' } } } });
+  f.api.input.value = '629'; f.api.input.handlers.input();
+  assert.equal(f.selected().length, 0);
+  f.api.input.value = ''; f.api.input.handlers.input();
+  assert.equal(f.selected().length, 1);
+  assert.ok(f.store.get().phangs.surveys.alma);
+  f.api.input.value = 'NoSuchGalaxy'; f.api.input.handlers.input();
+  assert.equal(f.selected().length, 0);
 });
 
-test('missing axes are labelled and never recentered; Escape closes the results', t => {
-  const f = fixture(t, { missing: true });
-  f.api.input.value = 'ngc628';
-  f.api.input.dispatch('input');
-  assert.match(f.list.children[0].children.at(-1).textContent, /Unavailable on current axes/);
-  f.api.input.dispatch('keydown', { key: 'Enter' });
-  assert.equal(f.pans.length, 0);
-  f.api.input.dispatch('focus');
-  const e = f.api.input.dispatch('keydown', { key: 'Escape' });
-  assert.equal(f.panel.hidden, true);
-  assert.equal(e.defaultPrevented, true);
-  f.app.overlays.phangs.project = () => ({ X: 1, Y: 2, vis: .5 });
-  assert.match(galaxySearchStatus(f.app, rows[0]).text, /Faded/);
+test('restoring or removing a name filter synchronises the header field and focus', t => {
+  const f = fixture(t);
+  f.store.set({ phangs: { nameQuery: 'M 74' } });
+  assert.equal(f.api.input.value, 'M 74');
+  assert.deepEqual(f.selected().map(r => r.name), ['ngc0628']);
+  f.store.set({ phangs: { nameQuery: '' } });
+  assert.equal(f.api.input.value, '');
+  assert.equal(f.selected().length, rows.length);
+  f.api.focus(); assert.equal(f.api.input.focused, true);
+});
+
+test('search status distinguishes property/survey exclusions and missing plot axes', t => {
+  const f = fixture(t);
+  f.app.overlays = { phangs: { project: () => ({ X: 1, Y: 2, vis: 0 }) } };
+  assert.match(galaxySearchStatus(f.app, rows[0]).text, /Unavailable on current axes/);
+  f.store.set({ phangs: { surveys: { alma: { status: 'observed' } } } });
+  assert.match(galaxySearchStatus(f.app, rows[1]).text, /Hidden by observation filters/);
+  f.store.set({ phangs: { nameQuery: 'OtherName' } });
+  assert.match(galaxySearchStatus(f.app, rows[0]).text, /Hidden by PHANGS filters/);
 });

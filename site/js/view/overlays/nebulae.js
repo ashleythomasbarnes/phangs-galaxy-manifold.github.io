@@ -2,11 +2,11 @@
 // Individual points use the shared canvas and click/hover hooks, never thousands of DOM nodes.
 import { h } from '../../ui/dom.js';
 import { fadeFactors } from '../../math/frame.js';
-import { matchesPhangsSurveys } from '../../data/surveys.js';
+import { COLORS } from '../../config/style.js';
 import { NEBULA_KEYS, NEBULA_DISPLAYS, NEBULA_SUMMARIES, NEBULA_LABELS,
   nebulaOptions, hasNebulaAxes, nebulaValues, nebulaRow } from '../../data/nebulae.js';
 
-export function createNebulae(app, ov, { hosts, baseValues, project, inspect, selected, changed }) {
+export function createNebulae(app, ov, { hosts, baseValues, project, matches = () => true, inspect, selected, changed }) {
   const display = h('select', { 'aria-label': 'MUSE nebula display' },
     ...Object.entries(NEBULA_DISPLAYS).map(([value, text]) => h('option', { value, text })));
   const summary = h('select', { 'aria-label': 'MUSE galaxy summary' },
@@ -127,9 +127,9 @@ export function createNebulae(app, ov, { hosts, baseValues, project, inspect, se
       ctx.beginPath();
       ctx.rect(plot.l, plot.t, plot.r - plot.l, plot.b - plot.t);
       ctx.clip();
-      ctx.fillStyle = '#e8b85c';
+      ctx.fillStyle = COLORS.nebula;
       for (const { host, entries } of groups) {
-        if (!matchesPhangsSurveys(host, app.store.get().phangs?.surveys)) continue;
+        if (!matches(host)) continue;
         matching += entries.length;
         const base = project({ ...baseValues(host), ...centers }, dims, F, fade);
         if (base.vis < .01) continue;
@@ -150,7 +150,7 @@ export function createNebulae(app, ov, { hosts, baseValues, project, inspect, se
           ctx.fillRect(x - 1.25, y - 1.25, 2.5, 2.5);
           if (selected()?.nebula === region) {
             ctx.globalAlpha = vis;
-            ctx.strokeStyle = '#fff';
+            ctx.strokeStyle = COLORS.mark;
             ctx.lineWidth = 1.5;
             ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.stroke();
           }
@@ -173,7 +173,7 @@ export function createNebulae(app, ov, { hosts, baseValues, project, inspect, se
     }
     if (closest < 0) return null;
     const region = regionData.regions[closest], host = hosts().find(row => row.name === region.galaxy);
-    return host && matchesPhangsSurveys(host, app.store.get().phangs?.surveys) ? nebulaRow(host, region) : null;
+    return host && matches(host) ? nebulaRow(host, region) : null;
   }
 
   app.interaction.addClickHandler?.(({ sx, sy }) => {
@@ -250,6 +250,9 @@ export function createNebulae(app, ov, { hosts, baseValues, project, inspect, se
   }).finally(() => { changed(); syncControls(); ov.invalidate(); });
 
   return { ready, controls, values, details, draw, pick, loadRegions, clearHover,
+    summary: name => summaries.get(name),
+    get catalogue() { return catalogue; },
+    get summaryError() { return summaryError; },
     get hovering() { return !!hovered; },
     get options() { return options(); },
     get activeAxes() { return activeAxes(); },
